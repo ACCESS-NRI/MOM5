@@ -12,7 +12,7 @@ jobs:
     uses: access-nri/workflows/.github/workflows/build-package.yml@main
     with:
       container-registry: ghcr.io
-      container-name: access-nri/build-${{ github.event.repository.name }}-intel2021.1.2
+      container-name: access-nri/build-mom5-intel2021.1.2
       package-name: mom5
       compiler-name: intel
       compiler-version: 2021.1.2
