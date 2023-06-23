@@ -334,7 +334,7 @@ use ocean_xlandmix_mod,           only: ocean_xlandmix_init, xlandmix
 use ocean_drifters_mod,           only: ocean_drifters_init, update_ocean_drifters, ocean_drifters_end
 use wave_types_mod,               only: ocean_wave_type
 use ocean_wave_mod,               only: ocean_wave_init, ocean_wave_end, ocean_wave_model
-use version_mod,                  only: MOM_COMMIT_HASH
+use version_mod,                  only: MOM_VERSION
 
 #if defined(ACCESS_CM) || defined(ACCESS_OM)
   use auscom_ice_mod, only: auscom_ice_init
@@ -697,7 +697,7 @@ subroutine ocean_model_init(Ocean, Ocean_state, Time_init, Time_in, &
     stdlogunit=stdlog() 
 
     if (mpp_pe() == mpp_root_pe()) then
-        write(stdoutunit,*) MOM_COMMIT_HASH
+        write(stdoutunit,*) MOM_VERSION
     endif
 
     if (module_is_initialized) then 
