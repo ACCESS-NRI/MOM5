@@ -6,13 +6,13 @@ module version_mod
 !   used to build this executable.
 !
 !   The hash can be read with the following command:
-!   $ strings <executable> | grep MOM_COMMIT_HASH
+!   $ strings <executable> | grep MOM_VERSION
 ! </OVERVIEW>
 
 implicit none
 private
 
-character (len=*), parameter, public :: MOM_COMMIT_HASH = "MOM_COMMIT_HASH={MOM_COMMIT_HASH}"
+character (len=*), parameter, public :: MOM_VERSION = "MOM_VERSION={MOM_VERSION}"
 
 contains
 
