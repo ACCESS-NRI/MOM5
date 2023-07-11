@@ -1,4 +1,4 @@
-name: Test MOM5 build
+name: Test MOM5 compilation
 
 on:
   workflow_dispatch:
