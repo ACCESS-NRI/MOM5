@@ -16,5 +16,6 @@ jobs:
       package-name: mom5
       compiler-name: intel
       compiler-version: 2021.1.2
+      spack-packages-version: 24-tarball-url
     permissions:
       packages: read
