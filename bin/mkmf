@@ -36,13 +36,14 @@ EQUALS = =
 #subroutines
 sub ensureTrailingSlash {
 #ensure trailing slash on directory names
-   local $/ = '/'; chomp @_[0]; @_[0] .= '/';
+   local $/ = '/'; 
+   chomp @_[0]; 
+   @_[0] .= '/';
+   escapeEqualsSign(@_[0]);
 }
 
 sub escapeEqualsSign {
-   my ( $string ) = @_[0];
-   
-   return $string =~ s/=/$(EQUALS)/
+   @_[0] =~ s/=/\$\(EQUALS\)/;
 }
 
 my $version = '$Id: mkmf,v 1.1.2.1 2013/12/18 17:47:54 Niki.Zadeh Exp $ ';
