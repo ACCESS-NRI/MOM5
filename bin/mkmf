@@ -31,10 +31,18 @@ use Getopt::Std;
 use Config;			# use to put in platform-specific stuff
 use vars qw( $opt_a $opt_c $opt_d $opt_f $opt_l $opt_m $opt_o $opt_p $opt_t $opt_v $opt_x $opt_I ); # declare these global to be shared with Getopt:Std
 
+EQUALS = =
+
 #subroutines
 sub ensureTrailingSlash {
 #ensure trailing slash on directory names
    local $/ = '/'; chomp @_[0]; @_[0] .= '/';
+}
+
+sub escapeEqualsSign {
+   my ( $string ) = @_[0];
+   
+   return $string =~ s/=/$(EQUALS)/
 }
 
 my $version = '$Id: mkmf,v 1.1.2.1 2013/12/18 17:47:54 Niki.Zadeh Exp $ ';
