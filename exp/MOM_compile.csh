@@ -7,8 +7,9 @@ set platform      = gfortran    # A unique identifier for your platfo
 set type          = MOM_solo    # Type of the experiment
 set unit_testing = 0
 set help = 0
+set environ = 1
 
-set argv = (`getopt -u -o h -l type: -l platform: -l help: -l unit_testing  --  $*`)
+set argv = (`getopt -u -o h -l type: -l platform: -l help: -l unit_testing: -l no_environ  --  $*`)
 while ("$argv[1]" != "--")
     switch ($argv[1])
         case --type:
@@ -17,6 +18,8 @@ while ("$argv[1]" != "--")
                 set platform = $argv[2]; shift argv; breaksw
         case --unit_testing:
                 set unit_testing = 1; breaksw
+        case --no_environ:
+                set environ = 0; breaksw
         case --help:
                 set help = 1;  breaksw
         case -h:
@@ -36,6 +39,8 @@ if ( $help ) then
     echo "             EBM      : ocean-seaice-land-atmosphere coupled model with energy balance atmosphere"
     echo
     echo "--platform   followed by the platform name that has a corresponfing environ file in the ../bin dir, default is ncrc.intel"
+    echo
+    echo "--no_environ do not source platform specific environment. Allows customising/overriding default environment"
     echo
     echo
     exit 0
@@ -75,7 +80,9 @@ endif
 #
 # Users must ensure the correct environment file exists for their platform.
 #
-source $root/bin/environs.$platform  # environment variables and loadable modules
+if ( $environ ) then
+  source $root/bin/environs.$platform  # environment variables and loadable modules
+endif
 
 #
 # compile mppnccombine.c, needed only if $npes > 1
