@@ -9,7 +9,13 @@ if( $type == ACCESS-OM || $type == ACCESS-CM || $type == ACCESS-OM-BGC || $type 
     if( $type ==  ACCESS-OM-BGC ) then
         set srcList = ( $srcList mom5/ocean_csiro_bgc )
     else if ( $type ==  ACCESS-OM || $type == ACCESS-ESM ) then
-        set srcList = ( $srcList mom5/ocean_bgc access/generic_tracers/generic_tracers access/generic_tracers/mocsy/src )
+
+        if ( ! $?SPACK_GTRACERS_EXTERNAL ) then
+            set srcList = ( $srcList mom5/ocean_bgc access/generic_tracers/generic_tracers access/generic_tracers/mocsy/src )
+        else
+            set srcList = ( $srcList mom5/ocean_bgc )
+        endif
+
     endif
     mkdir -p $executable:h:h/$type/$lib_name
     cd $executable:h:h/$type/$lib_name
