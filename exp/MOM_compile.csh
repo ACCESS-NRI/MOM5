@@ -156,10 +156,14 @@ if ( $cosima_version ) then
     set cppDefs = "$cppDefs -DCOSIMA_VERSION"
 endif
 
-# Build FMS.
-source ./FMS_compile.csh
-
-set includes = "-I$code_dir/shared/include -I$executable:h:h/lib_FMS -I$executable:h:h/lib_ocean"
+if ( ! $?SPACK_GTRACERS_EXTERNAL ) then
+    echo "Building type=$type with internal FMS"
+    source ./FMS_compile.csh
+    set includes = "-I$code_dir/shared/include -I$executable:h:h/lib_FMS -I$executable:h:h/lib_ocean"
+else
+    echo "Building type=$type with external FMS"
+    set includes = "-I$code_dir/shared/include -I$executable:h:h/lib_ocean"
+endif
 
 if ( $cosima_version ) then
     set includes = "$includes -I$executable:h:h/lib_version/"
@@ -221,16 +225,16 @@ mkdir -p $executable:h
 cd $executable:h
 if( $type == MOM_solo ) then
     set srcList = ( mom5/drivers )
-    set libs = "$executable:h:h/lib_ocean/lib_ocean.a $executable:h:h/lib_FMS/lib_FMS.a"
+    set libs = "$executable:h:h/lib_ocean/lib_ocean.a"
 else if( $type == ACCESS-CM || $type == ACCESS-ESM) then
     set srcList = ( access/accesscm_coupler )
-    set includes = "-I$executable:h:h/lib_FMS -I$executable:h:h/$type/lib_ocean"
+    set includes = "-I$executable:h:h/$type/lib_ocean"
     set libs = "$executable:h:h/$type/lib_ocean/lib_ocean.a"
     setenv OASIS true
 else if( $type == ACCESS-OM || $type == ACCESS-OM-BGC) then
     set srcList = ( access/accessom_coupler )
-    set includes = "-I$executable:h:h/lib_FMS -I$executable:h:h/$type/lib_ocean"
-    set libs = "$executable:h:h/$type/lib_ocean/lib_ocean.a $executable:h:h/lib_FMS/lib_FMS.a"
+    set includes = "-I$executable:h:h/$type/lib_ocean"
+    set libs = "$executable:h:h/$type/lib_ocean/lib_ocean.a"
 else if( $type == MOM_SIS ) then
     set srcList = ( coupler )
     set includes = "$includes -I$executable:h:h/lib_ice -I$executable:h:h/lib_atmos_null -I$executable:h:h/lib_land_null"
@@ -260,8 +264,12 @@ if( $type == ACCESS-OM || $type == ACCESS-ESM) then
     set srcList = ( $srcList access/shared )
 endif
 
-# Always include FMS
-set libs = "$libs $executable:h:h/lib_FMS/lib_FMS.a"
+if ( ! $?SPACK_GTRACERS_EXTERNAL ) then
+    set libs = "$libs $executable:h:h/lib_FMS/lib_FMS.a"
+    if( $type == ACCESS-CM || $type == ACCESS-ESM || $type == ACCESS-OM || $type == ACCESS-OM-BGC) then
+        set includes = "$includes -I$executable:h:h/lib_FMS"
+    endif
+endif
 
 if ( $cosima_version ) then
     set libs = "$libs $executable:h:h/lib_version/lib_version.a"
