@@ -57,7 +57,7 @@ if ( $help ) then
     echo "             EBM       : ocean-seaice-land-atmosphere coupled model with energy balance atmosphere"
     echo "             ACCESS-CM : ocean component of ACCESS-CM model."
     echo "             ACCESS-OM : ocean component of ACCESS-OM model."
-    echo "             ACCESS-ESM : ocean component of ACCESS-ESM model with CSIRO BGC  (Wombat)."
+    echo "             ACCESS-ESM : ocean component of ACCESS-ESM model with support for generic tracer WOMBATlite."
     echo "             ACCESS-OM-BGC: ocean component of ACCESS-OM model with CSIRO BGC  (Wombat). Wombat has now been"
     echo "                            implemented as a generic tracer and is available in the ACCESS-OM model type."
     echo "                            ACCESS-OM-BGC is retained only for legacy."
@@ -112,7 +112,7 @@ else if( $type == ACCESS-OM-BGC ) then
 else if( $type == ACCESS-CM ) then
     set cppDefs  = ( "-Duse_netCDF -Duse_libMPI -DACCESS_CM" )
 else if( $type == ACCESS-ESM ) then
-    set cppDefs  = ( "-Duse_netCDF -Duse_libMPI -DACCESS_CM -DCSIRO_BGC" )
+    set cppDefs  = ( "-Duse_netCDF -Duse_libMPI -DACCESS_CM -DUSE_OCEAN_BGC" )
 endif
 
 if ( $unit_testing ) then
@@ -256,7 +256,7 @@ else
     exit 1
 endif
 
-if( $type == ACCESS-OM ) then
+if( $type == ACCESS-OM || $type == ACCESS-ESM) then
     set srcList = ( $srcList access/shared )
 endif
 

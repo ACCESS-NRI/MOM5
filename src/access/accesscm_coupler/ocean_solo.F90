@@ -154,11 +154,16 @@ program main
 
   use auscom_ice_parameters_mod, only: redsea_gulfbay_sfix, do_sfix_now, sfix_hours, int_sec
 
+  use coupler_types_mod,        only: coupler_2d_bc_type, coupler_type_data_override, coupler_type_send_data
+  use gtracer_flux_mod,         only: flux_exchange_init, atmos_ocean_fluxes_calc
+  use gtracer_flux_mod,         only: gas_fields_restore, gas_fields_restart
+
   implicit none
 
   type (ocean_public_type)               :: Ocean_sfc          
   type (ocean_state_type),       pointer :: Ocean_state
-  type(ice_ocean_boundary_type), target  :: Ice_ocean_boundary 
+  type(ice_ocean_boundary_type), target  :: Ice_ocean_boundary
+  type(coupler_2d_bc_type),      target  :: Atm_fields
 
   ! define some time types 
   type(time_type) :: Time_init    ! initial time for experiment
@@ -171,7 +176,8 @@ program main
   type(time_type) :: Time_restart
   type(time_type) :: Time_restart_current
   type(time_type) :: Time_last_sfix 
-  type(time_type) :: Time_sfix 
+  type(time_type) :: Time_sfix
+  type(time_type) :: Time_next
   integer :: sfix_seconds
 
   character(len=17) :: calendar = 'julian'
@@ -393,56 +399,13 @@ program main
   call data_override_init(Ocean_domain_in = Ocean_sfc%domain)
 
   override_clock = mpp_clock_id('Override', flags=flags,grain=CLOCK_COMPONENT)
-  
-  call mpp_get_compute_domain(Ocean_sfc%domain, isc, iec, jsc, jec)
-  
-  allocate ( Ice_ocean_boundary% u_flux (isc:iec,jsc:jec),          &
-             Ice_ocean_boundary% v_flux (isc:iec,jsc:jec),          &
-             Ice_ocean_boundary% t_flux (isc:iec,jsc:jec),          &
-             Ice_ocean_boundary% q_flux (isc:iec,jsc:jec),          &
-             Ice_ocean_boundary% salt_flux (isc:iec,jsc:jec),       &
-             Ice_ocean_boundary% lw_flux (isc:iec,jsc:jec),         &
-             Ice_ocean_boundary% sw_flux_vis_dir (isc:iec,jsc:jec), &
-             Ice_ocean_boundary% sw_flux_vis_dif (isc:iec,jsc:jec), &
-             Ice_ocean_boundary% sw_flux_nir_dir (isc:iec,jsc:jec), &
-             Ice_ocean_boundary% sw_flux_nir_dif (isc:iec,jsc:jec), &
-             Ice_ocean_boundary% lprec (isc:iec,jsc:jec),           &
-             Ice_ocean_boundary% fprec (isc:iec,jsc:jec),           &
-             Ice_ocean_boundary% runoff (isc:iec,jsc:jec),          &
-             Ice_ocean_boundary% calving (isc:iec,jsc:jec),         &
-             Ice_ocean_boundary% p (isc:iec,jsc:jec),               &
-             Ice_ocean_boundary% aice(isc:iec,jsc:jec),             &
-             Ice_ocean_boundary% mh_flux(isc:iec,jsc:jec),          &
-             Ice_ocean_boundary% wfimelt(isc:iec,jsc:jec),          &
-             Ice_ocean_boundary% wfiform(isc:iec,jsc:jec))
-  allocate ( Ice_ocean_boundary%co2(isc:iec,jsc:jec),               &
-             Ice_ocean_boundary%wnd(isc:iec,jsc:jec),               &
-             Ice_ocean_boundary%licefw(isc:iec,jsc:jec),            &
-             Ice_ocean_boundary%liceht(isc:iec,jsc:jec))
 
-  Ice_ocean_boundary%u_flux          = 0.0
-  Ice_ocean_boundary%v_flux          = 0.0
-  Ice_ocean_boundary%t_flux          = 0.0
-  Ice_ocean_boundary%q_flux          = 0.0
-  Ice_ocean_boundary%salt_flux       = 0.0
-  Ice_ocean_boundary%lw_flux         = 0.0
-  Ice_ocean_boundary%sw_flux_vis_dir = 0.0
-  Ice_ocean_boundary%sw_flux_vis_dif = 0.0
-  Ice_ocean_boundary%sw_flux_nir_dir = 0.0
-  Ice_ocean_boundary%sw_flux_nir_dif = 0.0
-  Ice_ocean_boundary%lprec           = 0.0
-  Ice_ocean_boundary%fprec           = 0.0
-  Ice_ocean_boundary%runoff          = 0.0
-  Ice_ocean_boundary%calving         = 0.0
-  Ice_ocean_boundary%p               = 0.0
-  Ice_ocean_boundary%aice            = 0.0
-  Ice_ocean_boundary%mh_flux         = 0.0
-  Ice_ocean_boundary% wfimelt        = 0.0
-  Ice_ocean_boundary% wfiform        = 0.0
-  Ice_ocean_boundary%co2             = 0.0
-  Ice_ocean_boundary%wnd             = 0.0
-  Ice_ocean_boundary%licefw          = 0.0
-  Ice_ocean_boundary%liceht          = 0.0
+  ! Initialise the boundary values, including initialising and setting boundary values
+  ! in FMS coupler types
+  call flux_exchange_init(Time, Ocean_sfc, Ocean_state, Ice_ocean_boundary, Atm_fields)
+
+  ! Restore ocean FMS coupler type fields from restart file
+  call gas_fields_restore(Ocean_sfc)
 
   coupler_init_clock = mpp_clock_id('OASIS init', grain=CLOCK_COMPONENT)
   call mpp_clock_begin(coupler_init_clock)
@@ -452,11 +415,24 @@ program main
   ! loop over the coupled calls
   do nc=1, num_cpld_calls
 
-     call external_coupler_sbc_before(Ice_ocean_boundary, Ocean_sfc, nc, dt_cpld )
+     call external_coupler_sbc_before(Ice_ocean_boundary, Ocean_sfc, Atm_fields, nc, dt_cpld )
 
+     ! Potentially override fields from the data_table
      call mpp_clock_begin(override_clock)
-     call ice_ocn_bnd_from_data(Ice_ocean_boundary)
+     Time_next = Time + Time_step_coupled
+     call coupler_type_data_override('OCN', Atm_fields, Time_next)
+     call ice_ocn_bnd_from_data(Ice_ocean_boundary, Time_next)
      call mpp_clock_end(override_clock)
+
+     ! Calculate the extra tracer fluxes
+     call mpp_get_compute_domain(Ocean_sfc%domain, isc, iec, jsc, jec)
+     call atmos_ocean_fluxes_calc(Atm_fields, Ocean_sfc%fields, Ice_ocean_boundary%fluxes, &
+           Ice_ocean_boundary%aice, isc, iec, jsc, jec)
+
+     ! Send FMS coupler type diagnostics
+     call coupler_type_send_data(Ice_ocean_boundary%fluxes, Time_next)
+     call coupler_type_send_data(Ocean_sfc%fields, Time_next)
+     call coupler_type_send_data(Atm_fields, Time_next)
 
      if (debug_this_module) then
         call write_boundary_chksums(Ice_ocean_boundary)
@@ -473,24 +449,25 @@ program main
 
      call update_ocean_model(Ice_ocean_boundary, Ocean_state, Ocean_sfc, Time, Time_step_coupled)
 
-     Time = Time + Time_step_coupled
+     Time = Time_next
 
      if( Time >= Time_restart ) then
-       Time_restart_current = Time
-       Time_restart = increment_date(Time, restart_interval(1), restart_interval(2), &
+        Time_restart_current = Time
+        Time_restart = increment_date(Time, restart_interval(1), restart_interval(2), &
              restart_interval(3), restart_interval(4), restart_interval(5), restart_interval(6) )
-       timestamp = date_to_string(time_restart_current)
+        timestamp = date_to_string(time_restart_current)
         write(stdoutunit,*) '=> NOTE from program ocean_solo: intermediate restart file is written and ', &
              trim(timestamp),' is appended as prefix to each restart file name'
         call ocean_model_restart(Ocean_state, timestamp)
         call ocean_solo_restart(Time, Time_restart_current, timestamp)
+        call gas_fields_restart(Ocean_sfc, timestamp)
      end if
 
      call external_coupler_sbc_after(Ice_ocean_boundary, Ocean_sfc, nc, dt_cpld )
 
   enddo
 
-  call external_coupler_restart( dt_cpld, num_cpld_calls, Ocean_sfc)
+  call external_coupler_restart( dt_cpld, num_cpld_calls, Ocean_sfc, Ice_ocean_boundary)
 
   ! close some of the main components 
   call ocean_model_end(Ocean_sfc, Ocean_state, Time)
@@ -500,8 +477,9 @@ program main
   ! need to reset pelist before calling mpp_clock_end
   ! call mpp_set_current_pelist()
 
-  ! write restart file
+  ! write restart files
   call ocean_solo_restart(Time_end, Time_restart_current)
+  call gas_fields_restart(Ocean_sfc)
 
   call fms_io_exit
 
@@ -559,12 +537,13 @@ end subroutine ocean_solo_restart
 
 !====================================================================
 ! get forcing data from data_overide 
-subroutine ice_ocn_bnd_from_data(x)
+subroutine ice_ocn_bnd_from_data(x, Time_next)
 
       type (ice_ocean_boundary_type) :: x
       type(time_type)                :: Time_next
 
-      Time_next = Time + Time_step_coupled
+      integer                        :: m, n
+
       call data_override('OCN', 't_flux',          x%t_flux         , Time_next)
       call data_override('OCN', 'u_flux',          x%u_flux         , Time_next)
       call data_override('OCN', 'v_flux',          x%v_flux         , Time_next)
@@ -582,11 +561,20 @@ subroutine ice_ocn_bnd_from_data(x)
       call data_override('OCN', 'p',               x%p              , Time_next)
       call data_override('OCN', 'aice',            x%aice           , Time_next)
       call data_override('OCN', 'mh_flux',         x%mh_flux        , Time_next)
+
+      ! Overriding ice_ocean_boundary%fluxes here avoids unnecessary calculation
+      ! of overridden fluxes. However, we cannot use coupler_type_data_override
+      ! here since it does not set the override flag on overridden fields
+      do n = 1, x%fluxes%num_bcs
+        do m = 1, x%fluxes%bc(n)%num_fields
+          call data_override('OCN', x%fluxes%bc(n)%field(m)%name, &
+            x%fluxes%bc(n)%field(m)%values, Time_next, &
+            override=x%fluxes%bc(n)%field(m)%override)
+        enddo
+      enddo
     call mpp_sync()
             
 end subroutine ice_ocn_bnd_from_data
-
-
 
 ! Here we provide some hooks for calling an interface between the OASIS3 coupler and MOM.
 ! The mom_oasis3_interface module is NOT general and it is expected that the user will 
@@ -619,7 +607,7 @@ subroutine external_coupler_sbc_init(Dom, dt_cpld, Run_len)
     call coupler_init(Dom, dt_cpld=dt_cpld, Run_len=Run_len)
 end  subroutine external_coupler_sbc_init
 
-subroutine external_coupler_sbc_before(Ice_ocean_boundary, Ocean_sfc, nsteps, dt_cpld )
+subroutine external_coupler_sbc_before(Ice_ocean_boundary, Ocean_sfc, Atm_fields, nsteps, dt_cpld )
     ! Perform transfers before ocean time stepping
     ! May need special tratment on first call.
 
@@ -628,6 +616,7 @@ subroutine external_coupler_sbc_before(Ice_ocean_boundary, Ocean_sfc, nsteps, dt
     implicit none
     type (ice_ocean_boundary_type), intent(INOUT) :: Ice_ocean_boundary
     type (ocean_public_type) , intent(INOUT)        :: Ocean_sfc
+    type (coupler_2d_bc_type), intent(INOUT)        :: Atm_fields
     integer , intent(IN)                       :: nsteps, dt_cpld
 
     integer                        :: rtimestep ! Receive timestep
@@ -635,8 +624,8 @@ subroutine external_coupler_sbc_before(Ice_ocean_boundary, Ocean_sfc, nsteps, dt
 
     rtimestep = (nsteps-1) * dt_cpld   ! runtime in this run segment!
     stimestep = rtimestep
-    call from_coupler( rtimestep, Ocean_sfc, Ice_ocean_boundary )
-    call into_coupler( stimestep, Ocean_sfc, before_ocean_update = .true.)
+    call from_coupler( rtimestep, Ocean_sfc, Ice_ocean_boundary, Atm_fields )
+    call into_coupler( stimestep, Ocean_sfc, Ice_ocean_boundary, before_ocean_update = .true.)
 end subroutine external_coupler_sbc_before
 
 subroutine external_coupler_sbc_after(Ice_ocean_boundary, Ocean_sfc, nsteps, dt_cpld )
@@ -652,19 +641,21 @@ subroutine external_coupler_sbc_after(Ice_ocean_boundary, Ocean_sfc, nsteps, dt_
     integer                        :: stimestep ! Send timestep
 
     stimestep = nsteps * dt_cpld   ! runtime in this run segment!
-    if (stimestep < num_cpld_calls*dt_cpld) call into_coupler(stimestep, Ocean_sfc, before_ocean_update = .false.)
+    if (stimestep < num_cpld_calls*dt_cpld) call into_coupler(stimestep, Ocean_sfc, &
+        Ice_ocean_boundary, before_ocean_update = .false.)
 end subroutine external_coupler_sbc_after
 
-subroutine external_coupler_restart( dt_cpld, num_cpld_calls, Ocean_sfc)
+subroutine external_coupler_restart( dt_cpld, num_cpld_calls, Ocean_sfc, Ice_ocean_boundary)
     !Clean up as appropriate and write a restart
     use mom_oasis3_interface_mod, only : write_coupler_restart
     implicit none
     integer, intent(in)               :: dt_cpld, num_cpld_calls
     integer                           :: timestep
     type (ocean_public_type)         :: Ocean_sfc
+    type (ice_ocean_boundary_type)   :: Ice_ocean_boundary
 
     timestep = num_cpld_calls * dt_cpld
-    call write_coupler_restart(timestep, Ocean_sfc, write_restart=.true.)
+    call write_coupler_restart(timestep, Ocean_sfc, Ice_ocean_boundary, write_restart=.true.)
 end subroutine external_coupler_restart
 
 subroutine external_coupler_exit
