@@ -294,11 +294,11 @@ subroutine sw_source (Time, Thickness, Dens, T_prog, T_diag, swflx, swflx_vis, T
   if(use_shortwave_gfdl) then 
      call sw_source_gfdl (Time, Thickness, T_diag(:), swflx, swflx_vis, index_irr, Temp, sw_frac_zt, opacity)
   elseif(use_shortwave_csiro) then 
-     call sw_source_csiro (Time, Thickness, T_diag(:), swflx, index_irr, Temp, sw_frac_zt)
+     call sw_source_csiro (Time, Thickness, T_diag(:), swflx, index_irr, Temp, sw_frac_zt, opacity)
   elseif(use_shortwave_jerlov) then 
      call sw_source_jerlov (Thickness, T_diag(:), swflx, swflx_vis, index_irr, Temp, sw_frac_zt, opacity)
   elseif(use_shortwave_ext) then
-     call sw_source_ext(Time, Thickness, T_diag(:),  swflx, Temp, sw_frac_zt)
+     call sw_source_ext(Time, Thickness, T_diag(:),  swflx, Temp, sw_frac_zt, opacity)
   endif 
 
   ! add heating rate to thickness*density weighted temperature
@@ -364,7 +364,7 @@ end subroutine sw_source
 !
 ! </DESCRIPTION>
 
-subroutine sw_source_ext (Time, Thickness, T_diag, swflx, Temp, sw_frac_zt)
+subroutine sw_source_ext (Time, Thickness, T_diag, swflx, Temp, sw_frac_zt, opacity)
 
   type(ocean_time_type),         intent(in)    :: Time
   type(ocean_thickness_type),    intent(in)    :: Thickness
@@ -372,6 +372,7 @@ subroutine sw_source_ext (Time, Thickness, T_diag, swflx, Temp, sw_frac_zt)
   real, dimension(isd:,jsd:) ,   intent(in)    :: swflx
   type(ocean_prog_tracer_type),  intent(inout) :: Temp
   real, dimension(isd:,jsd:,:),  intent(inout) :: sw_frac_zt
+  real, dimension(isd:,jsd:,:),  intent(inout) :: opacity
 
   integer :: k, j, i
   real :: sw_heat_rate(isd:ied,jsd:jed,1:nk) 
@@ -381,7 +382,7 @@ subroutine sw_source_ext (Time, Thickness, T_diag, swflx, Temp, sw_frac_zt)
   ! 
   ! for our testing purposes we'll just invoke one of our methods
   ! Note here that index_irr is "global"
-  call sw_source_csiro (Time, Thickness, T_diag, swflx, index_irr, Temp, sw_frac_zt)
+  call sw_source_csiro (Time, Thickness, T_diag, swflx, index_irr, Temp, sw_frac_zt, opacity)
   ! the heating rate is stored in 
   sw_heat_rate = Temp%wrk1
 
