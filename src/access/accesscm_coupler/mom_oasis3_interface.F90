@@ -737,7 +737,7 @@ do jf =  1, num_fields_in
   case('co2_io')
      ! Ice_ocean_boundary%co2(iisc:iiec,jjsc:jjec) =  vwork(iisc:iiec,jjsc:jjec)
      ! Set the pcair field in the Atm_fields coupler_bc_type "co2_flux" boundary condition,
-     ! converting from from [ppmv] to [mol/mol]
+     ! converting from [ppmv] to [mol/mol]
      call set_coupler_type_data(vwork, "co2_flux", ind_pcair, Atm_fields, &
          scale_factor=1.e-6, idim=(/iisc,iisc,iiec,iiec/), jdim=(/jjsc,jjsc,jjec,jjec/))
   case('wnd_io')

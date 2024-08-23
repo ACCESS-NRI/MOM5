@@ -342,7 +342,6 @@ contains
     ! with MOM6. Note this means that the generic_?_update_from_coupler method is no longer
     ! called here. Instead this will be called later in ocean_generic_sbc_adjust when flux
     ! adjustments are available
-    ! call generic_tracer_coupler_get(Ice_ocean_boundary_fluxes)
     call generic_tracer_coupler_accumulate(Ice_ocean_boundary_fluxes, 1.)
 
     ! dts: Is this still needed here, since this is now also done in ocean_generic_sbc_adjust?

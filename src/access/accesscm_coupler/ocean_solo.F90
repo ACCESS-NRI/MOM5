@@ -536,7 +536,7 @@ program main
 end subroutine ocean_solo_restart
 
 !====================================================================
-! get forcing data from data_overide 
+! get forcing data from data_override 
 subroutine ice_ocn_bnd_from_data(x, Time_next)
 
       type (ice_ocean_boundary_type) :: x
