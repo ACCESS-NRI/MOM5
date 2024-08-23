@@ -94,6 +94,9 @@ use ocean_types_mod, only: ice_ocean_boundary_type, &
                            ocean_public_type, &
                            ocean_domain_type
 use time_manager_mod, only: time_type
+use gtracer_flux_mod, only: set_coupler_type_data, extract_coupler_type_data
+use coupler_types_mod, only: coupler_2d_bc_type, ind_pcair, ind_u10, ind_psurf, ind_csurf, ind_flux
+use constants_mod, only: WTMCO2, hlv
 
 ! Timing
 
@@ -355,7 +358,7 @@ endif
   mom_name_write(6)='frazil'
   mom_name_write(7)='dssldx'
   mom_name_write(8)='dssldy'
-  mom_name_write(9)='co2_o'
+  mom_name_write(9)='co2_o'  ! Ocean surface pCO2 is not used by any other models
   mom_name_write(10)='co2fx_o'
 
 
@@ -486,7 +489,7 @@ endif   !
 end subroutine  coupler_init
 
 !=======================================================================
-subroutine into_coupler(step, Ocean_sfc, Time, before_ocean_update)
+subroutine into_coupler(step, Ocean_sfc, Ice_ocean_boundary, Time, before_ocean_update)
 !------------------------------------------!
 
 use ocean_operators_mod, only : GRAD_BAROTROPIC_P       !GRAD_SURF_sealev
@@ -496,6 +499,7 @@ use auscom_ice_mod, only      : chk_o2i_fields, chk_fields_period, chk_fields_st
 implicit none
 
 type (ocean_public_type) :: Ocean_sfc
+type (ice_ocean_boundary_type) :: Ice_ocean_boundary
 type (time_type),optional         :: Time
 
 integer, intent(in) :: step
@@ -561,9 +565,17 @@ do jf = 1,num_fields_out
   case('dssldy') 
     vtmp(iisd:iied,jjsd:jjed) = Ocean_sfc%gradient(iisd:iied,jjsd:jjed,2)
   case('co2_o') 
+    ! Note, this is not actually used by the other models
+    ! If this is needed in the future with generic WOMBATlite, it can be calculated from the csurf
+    ! and alpha fields in the Ocean_sfc%fields coupler_bc_type "co2_flux" boundary condition:
+    ! pco2 [ppmv] = 1e6 * (co2_csurf / co2_alpha)
     vtmp(iisd:iied,jjsd:jjed) = Ocean_sfc%co2(iisd:iied,jjsd:jjed)
   case('co2fx_o') 
-    vtmp(iisd:iied,jjsd:jjed) = Ocean_sfc%co2flux(iisd:iied,jjsd:jjed)
+    ! vtmp(iisd:iied,jjsd:jjed) = Ocean_sfc%co2flux(iisd:iied,jjsd:jjed)
+    ! Extract the flux field in the IOB%fluxes coupler_bc_type "co2_flux" boundary condition,
+    ! converting from [mol/m^2/s] to [kg(CO2)/m^2/s] and to positive downwards
+    call extract_coupler_type_data(Ice_ocean_boundary%fluxes, "co2_flux", ind_flux, vtmp, &
+        scale_factor=-1.e-3*WTMCO2, idim=(/iisc,iisc,iiec,iiec/), jdim=(/jjsc,jjsc,jjec,jjec/))
   case DEFAULT
   call mpp_error(FATAL,&
       '==>Error from into_coupler: Unknown quantity.')
@@ -611,16 +623,16 @@ return
 end subroutine into_coupler
 
 !-----------------------------------------------------------------------------------
-subroutine from_coupler(step,Ocean_sfc,Ice_ocean_boundary, Time)
+subroutine from_coupler(step,Ocean_sfc,Ice_ocean_boundary, Atm_fields, Time)
 
 ! This is all highly user dependent. 
 
-use constants_mod, only  : hlv    ! 2.500e6 J/kg
 use auscom_ice_mod, only : chk_i2o_fields, chk_fields_period, chk_fields_start_time
 implicit none
 
 type (ocean_public_type) :: Ocean_sfc
 type (ice_ocean_boundary_type) :: Ice_ocean_boundary
+type (coupler_2d_bc_type) :: Atm_fields
 type (time_type),optional         :: Time
 
 real, dimension(isg:ieg,jsg:jeg) :: gtmp
@@ -631,7 +643,7 @@ real :: frac_vis_dir=0.5*0.43, frac_vis_dif=0.5*0.43,             &
         frac_nir_dir=0.5*0.57, frac_nir_dif=0.5*0.57 ! shortwave partitioning
 
   character*80 :: fname = 'fields_i2o_in_ocn.nc'
-  integer :: ncid,currstep,ll,ilout
+  integer :: ncid,currstep,ll,ilout,n
   data currstep/0/
   save currstep
 
@@ -723,7 +735,11 @@ do jf =  1, num_fields_in
   case('wfiform')
      Ice_ocean_boundary%wfiform(iisc:iiec,jjsc:jjec) =  vwork(iisc:iiec,jjsc:jjec)
   case('co2_io')
-     Ice_ocean_boundary%co2(iisc:iiec,jjsc:jjec) =  vwork(iisc:iiec,jjsc:jjec)
+     ! Ice_ocean_boundary%co2(iisc:iiec,jjsc:jjec) =  vwork(iisc:iiec,jjsc:jjec)
+     ! Set the pcair field in the Atm_fields coupler_bc_type "co2_flux" boundary condition,
+     ! converting from [ppmv] to [mol/mol]
+     call set_coupler_type_data(vwork, "co2_flux", ind_pcair, Atm_fields, &
+         scale_factor=1.e-6, idim=(/iisc,iisc,iiec,iiec/), jdim=(/jjsc,jjsc,jjec,jjec/))
   case('wnd_io')
      Ice_ocean_boundary%wnd(iisc:iiec,jjsc:jjec) =  vwork(iisc:iiec,jjsc:jjec)
   !20171024: 2 more i2o fields: water and heat fluxes due to land ice discharge into ocean 
@@ -752,6 +768,18 @@ do jf =  1, num_fields_in
 
      if(jf .ne. 1) call mpp_clock_end(id_oasis_recv1)
 enddo    !jf
+
+    ! Set the u10 and psurf fields in the Atm_fields coupler_bc_types
+    do n = 1, Atm_fields%num_bcs
+      if ((Atm_fields%bc(n)%flux_type .eq. 'air_sea_gas_flux_generic') .or. &
+        (Atm_fields%bc(n)%flux_type .eq. 'air_sea_gas_flux')) then
+        call set_coupler_type_data(ice_ocean_boundary%wnd, Atm_fields%bc(n)%name, ind_u10, &
+          Atm_fields, idim=(/iisc,iisc,iiec,iiec/), jdim=(/jjsc,jjsc,jjec,jjec/))
+        call set_coupler_type_data(ice_ocean_boundary%p, Atm_fields%bc(n)%name, ind_psurf, &
+          Atm_fields, idim=(/iisc,iisc,iiec,iiec/), jdim=(/jjsc,jjsc,jjec,jjec/))
+      endif
+    enddo
+
      call mpp_clock_end(id_oasis_recv)
 
   if (chk_i2o_fields .and. (mod(step, chk_fields_period) == 0) .and. (step >= chk_fields_start_time) .and. (mpp_pe() == mpp_root_pe())) then
@@ -761,13 +789,14 @@ enddo    !jf
 end subroutine from_coupler
 
 !-----------------------------------------------------------------------------------
-subroutine write_coupler_restart(step,Ocean_sfc,write_restart)
+subroutine write_coupler_restart(step,Ocean_sfc,Ice_ocean_boundary,write_restart)
 
 use auscom_ice_mod, only      : auscom_ice_heatflux_new
 
 logical, intent(in) :: write_restart
 integer, intent(in) :: step
 type (ocean_public_type) :: Ocean_sfc
+type (ice_ocean_boundary_type) :: Ice_ocean_boundary
 
 integer :: ncid,ll,ilout
 real, dimension(iisd:iied,jjsd:jjed) :: vtmp
@@ -794,7 +823,13 @@ if ( write_restart ) then
           case('dssldy'); vtmp = Ocean_sfc%gradient(iisd:iied,jjsd:jjed,2); fld_ice='ssly_i'
           case('frazil'); vtmp = Ocean_sfc%frazil(iisd:iied,jjsd:jjed); fld_ice='pfmice_i'
           case('co2_o'); vtmp = Ocean_sfc%co2(iisd:iied,jjsd:jjed); fld_ice='co2_oi'
-          case('co2fx_o'); vtmp = Ocean_sfc%co2flux(iisd:iied,jjsd:jjed); fld_ice='co2fx_oi'
+          case('co2fx_o')
+            ! vtmp = Ocean_sfc%co2flux(iisd:iied,jjsd:jjed); fld_ice='co2fx_oi'
+            ! Extract the flux field in the IOB%fluxes coupler_bc_type "co2_flux" boundary condition,
+            ! converting from [mol/m^2/s] to [kg(CO2)/m^2/s] and to positive downwards
+            call extract_coupler_type_data(Ice_ocean_boundary%fluxes, "co2_flux", ind_flux, vtmp, &
+                scale_factor=-1.e-3*WTMCO2, idim=(/iisc,iisc,iiec,iiec/), jdim=(/jjsc,jjsc,jjec,jjec/))
+            fld_ice='co2fx_oi'
         end select
 
         if (parallel_coupling) then

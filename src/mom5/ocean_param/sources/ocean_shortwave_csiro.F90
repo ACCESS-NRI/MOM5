@@ -100,6 +100,7 @@ use mpp_mod,                  only: input_nml_file, mpp_error, mpp_max, mpp_min
 use mpp_mod,                  only: mpp_clock_id, mpp_clock_begin, mpp_clock_end
 use mpp_mod,                  only: CLOCK_ROUTINE
 use time_interp_external_mod, only: time_interp_external, init_external_field
+use constants_mod,            only: epsln
 
 use ocean_domains_mod,        only: get_local_indices
 use ocean_types_mod,          only: ocean_time_type, ocean_domain_type, ocean_grid_type
@@ -306,7 +307,7 @@ end subroutine ocean_shortwave_csiro_init
 ! surface tracer flux "stf(i,j,temp)"
 !
 ! </DESCRIPTION>
-subroutine sw_source_csiro (Time, Thickness, T_diag, swflx, index_irr, Temp, sw_frac_zt)
+subroutine sw_source_csiro (Time, Thickness, T_diag, swflx, index_irr, Temp, sw_frac_zt, opacity)
 
   type(ocean_time_type),         intent(in)    :: Time
   type(ocean_thickness_type),    intent(in)    :: Thickness
@@ -315,6 +316,7 @@ subroutine sw_source_csiro (Time, Thickness, T_diag, swflx, index_irr, Temp, sw_
   integer,                        intent(in)    :: index_irr
   type(ocean_prog_tracer_type),  intent(inout) :: Temp
   real, dimension(isd:,jsd:,:),  intent(inout) :: sw_frac_zt
+  real, dimension(isd:,jsd:,:),  intent(inout) :: opacity
 
   real, dimension(isd:ied,jsd:jed,0:nk)  :: sw_frac_zw
   real, dimension(isd:ied,jsd:jed)       :: zt_sw
@@ -420,6 +422,29 @@ subroutine sw_source_csiro (Time, Thickness, T_diag, swflx, index_irr, Temp, sw_
         Temp%wrk1(i,j,k) = Grd%tmask(i,j,k)*swflx(i,j)*div_sw
       enddo
     enddo
+  enddo
+
+  ! Compute opacity, which is used by biogeochemistry.
+  ! We split off the k=1 level, since sw_frac_zw(k=0)=sw_frac_top,
+  ! which is typically set to sw_frac_top=0.0 for purposes of
+  ! accounting (as swflx is also in stf(index_temp). A value
+  ! of sw_frac_zw(k=0)=0.0 to compute opacity would result in a
+  ! negative opacity at k=1, which is not physical. Instead, for
+  ! purposes of opacity calculation, we need sw_frac_zw(k=0)=1.0.
+  k=1
+  do j=jsc,jec
+     do i=isc,iec
+        opacity(i,j,k) = -log( sw_frac_zw(i,j,k) / (F_vis + epsln) + epsln) &
+                          / (Thickness%dzt(i,j,k) + epsln)
+     enddo
+  enddo
+  do k=2,nk-1
+     do j=jsc,jec
+        do i=isc,iec
+           opacity(i,j,k) = -log( sw_frac_zw(i,j,k) / (sw_frac_zw(i,j,k-1) + epsln) + epsln) &
+                             / (Thickness%dzt(i,j,k) + epsln)
+        enddo
+     enddo
   enddo
 
 end subroutine sw_source_csiro
