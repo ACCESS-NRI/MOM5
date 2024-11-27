@@ -147,7 +147,11 @@ if ( ! -f $mppnccombine ) then
 endif
 
 set mkmf_lib = "$mkmf -f -m Makefile -a $code_dir -t $mkmfTemplate"
-set lib_include_dirs = "$root/include $code_dir/shared/include $code_dir/shared/mpp/include"
+if ( ! $?SPACK_GTRACERS_EXTERNAL ) then
+    set lib_include_dirs = "$root/include $code_dir/shared/include $code_dir/shared/mpp/include"
+else
+    set lib_include_dirs = "$root/include $code_dir/shared/mpp/include"
+endif
 
 if ( $cosima_version ) then
     echo "Including COSIMA version in build"
@@ -162,7 +166,7 @@ if ( ! $?SPACK_GTRACERS_EXTERNAL ) then
     set includes = "-I$code_dir/shared/include -I$executable:h:h/lib_FMS -I$executable:h:h/lib_ocean"
 else
     echo "Building type=$type with external FMS"
-    set includes = "-I$code_dir/shared/include -I$executable:h:h/lib_ocean"
+    set includes = "-I$executable:h:h/lib_ocean"
 endif
 
 if ( $cosima_version ) then
