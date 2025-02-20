@@ -1,0 +1,33 @@
+# This is a Spack Environment file.
+#
+# It describes a set of packages to be installed, along with
+# configuration settings.
+spack:
+  definitions:
+    - mom5s:
+        - matrix:
+          # The __PR__ label will be expanded to the HEAD commit on the PR, by the CI
+          - ['mom5@git.__PR__ ']
+          - ['%intel@2021.2.0 target=x86_64', '%intel@2021.4.0 target=x86_64']
+  # add package specs to the `specs` list
+  specs:
+    - access-om2@latest $^mom5s
+    # Equivalent to:
+    # - access-om2@latest ^mom5@git.__PR__ %intel@2021.2.0 target=x86_64
+    # - access-om2@latest ^mom5@git.__PR__ %intel@2021.4.0 target=x86_64
+  packages:
+    netcdf-c:
+      require:
+        - '@4.7.4'
+    netcdf-fortran:
+      require:
+        - '@4.5.2'
+    parallelio:
+      require:
+        - '@2.5.2'
+    openmpi:
+      require:
+        - '@4.0.2'
+  view: true
+  concretizer:
+    unify: false
