@@ -134,6 +134,12 @@
 #  define DEFAULT_SHUFFLE 1
 #endif
 
+inline int min(int a, int b)
+{
+  if (a<b) return a;
+  return b;
+}
+
 /* Information structure for a file */
 struct fileinfo
   {
@@ -721,12 +727,6 @@ void usage()
    printf("otherwise.\n");
   }
 
-
-inline int min(int a, int b)
-{
-  if (a<b) return a;
-  return b;
-}
 
 /* Open an input file and get some information about it, define the   */
 /* structure of the output file if necessary, prepare to copy all the */
