@@ -74,6 +74,8 @@ struct Node *getNextNode(struct Node *list);
 void copyNode(struct Node *node_out, struct Node node_in);
 void printNode(struct Node *list, char *str);
 int intersectInList(struct Node *list, double x, double y, double z);
+void insertIntersect(struct Node *list, double x, double y, double z, double u1, double u2, int inbound,
+                     double x2, double y2, double z2);
 void insertAfter(struct Node *list, double x, double y, double z, int intersect, double u, int inbound,
 		 double x2, double y2, double z2);
 double gridArea(struct Node *grid);
