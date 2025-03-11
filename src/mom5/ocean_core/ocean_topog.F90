@@ -358,7 +358,7 @@ subroutine ocean_topog_init (Domain, Grid, grid_file, vert_coordinate_type)
   Grid%htr = 0.0 
   do j=jsd,jed
      do i=isd,ied
-        if(Grid%kmt(i,j) > 0) then    
+        if(Grid%ht(i,j) > 0) then
             Grid%htr(i,j) = 1.0/Grid%ht(i,j)
         endif
      enddo
