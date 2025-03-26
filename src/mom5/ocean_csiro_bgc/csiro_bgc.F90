@@ -921,6 +921,7 @@ integer :: num_days
 integer :: second
 integer :: year
 integer :: indtemp, indsal
+real    :: schmidt_temp
 
 ! =====================================================================
 !     begin executable code
@@ -1003,10 +1004,12 @@ if (id_dic .eq. 0 .and. id_o2.eq. 0) return
 
 do j = jsc, jec  !{
   do i = isc, iec  !{
-    sc_co2(i,j) = 2073.1 + t_prog(indtemp)%field(i,j,1,time%taum1) * &
-         (-125.62 + t_prog(indtemp)%field(i,j,1,time%taum1) *        &
-          (3.6276 + t_prog(indtemp)%field(i,j,1,time%taum1) *        &
-           (-0.043219))) * grid%tmask(i,j,1)
+    ! Limit temp used for Schmidt number calculation.
+    schmidt_temp = min(35.0, t_prog(indtemp)%field(i,j,1,time%taum1))
+    sc_co2(i,j) = 2073.1 + schmidt_temp * &
+        (-125.62 + schmidt_temp *         &
+        (3.6276 + schmidt_temp *          &
+        (-0.043219))) * grid%tmask(i,j,1)
   enddo  !} i
 enddo  !} j 
 
@@ -1018,10 +1021,12 @@ enddo  !} j
 
 do j = jsc, jec  !{
   do i = isc, iec  !{
-    sc_o2(i,j) = 1638.0 + t_prog(indtemp)%field(i,j,1,time%taum1) *  &
-         (-81.83 + t_prog(indtemp)%field(i,j,1,time%taum1) *         &
-          (1.483 + t_prog(indtemp)%field(i,j,1,time%taum1) *         &
-           (-0.008004))) * grid%tmask(i,j,1)
+    ! Limit temp used for Schmidt number calculation.
+    schmidt_temp = min(35.0, t_prog(indtemp)%field(i,j,1,time%taum1))
+    sc_o2(i,j) = 1638.0 + schmidt_temp * &
+        (-81.83 + schmidt_temp *         &
+        (1.483 + schmidt_temp *          &
+        (-0.008004))) * grid%tmask(i,j,1)
   enddo  !} i
 enddo  !} j 
 
