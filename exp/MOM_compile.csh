@@ -264,7 +264,7 @@ else
     exit 1
 endif
 
-if( $type == ACCESS-OM || $type == ACCESS-ESM) then
+if( $type =~ ACCESS-* ) then
     set srcList = ( $srcList access/shared )
 endif
 
