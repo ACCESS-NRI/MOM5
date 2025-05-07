@@ -89,6 +89,11 @@ module gtracer_flux_mod
 #if defined(ACCESS_CM)
     allocate(Ice_ocean_boundary%co2(isc:iec,jsc:jec))
 #endif
+#if defined(ACCESS_OM) && defined(CSIRO_BGC)
+    allocate( &
+      Ice_ocean_boundary%iof_nit(isc:iec,jsc:jec), &
+      Ice_ocean_boundary%iof_alg(isc:iec,jsc:jec))
+#endif
 
     Ice_ocean_boundary%u_flux = 0.0
     Ice_ocean_boundary%v_flux = 0.0
@@ -114,6 +119,10 @@ module gtracer_flux_mod
     Ice_ocean_boundary%wnd = 0.0
 #if defined(ACCESS_CM)
     Ice_ocean_boundary%co2 = 0.0
+#endif
+#if defined(ACCESS_OM) && defined(CSIRO_BGC)
+    Ice_ocean_boundary%iof_nit = 0.0
+    Ice_ocean_boundary%iof_alg = 0.0
 #endif
 
     ! Spawn 2D Ocean%fields FMS coupler type from 1D gas_fields_ocn
