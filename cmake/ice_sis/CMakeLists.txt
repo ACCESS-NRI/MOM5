@@ -1,12 +1,25 @@
-set(SIS_DIR "${SRC_DIR}/ice_sis")
-set(ICE_PARAM_DIR "${SRC_DIR}/ice_param")
+# Copyright ACCESS-NRI and contributors. See the top-level LICENSE file for details.
 
-# common files for both builds
-file(GLOB_RECURSE SIS_SOURCE LIST_DIRECTORIES false FOLLOW_SYMLINKS
-  ${SIS_DIR}/*.[fF]90 ${ICE_PARAM_DIR}/*.[fF]90 )
+add_library(ice_sis)
 
-add_library(ice_sis ${SIS_SOURCE} ${OCEANSHARED_SOURCE})
 target_include_directories(ice_sis PRIVATE
-  $<TARGET_FILE_DIR:FMS> ${FMS_DIR}/include/ )
+  $<TARGET_FILE_DIR:fms_mom5>
+  ${SRC_DIR}/shared/include/
+)
 
-target_link_libraries(ice_sis FMS)
+target_link_libraries(ice_sis PRIVATE fms_mom5)
+
+target_sources(ice_sis PRIVATE
+  ${SRC_DIR}/ice_sis/ice_bergs.F90
+  ${SRC_DIR}/ice_sis/ice_dyn.F90
+  ${SRC_DIR}/ice_sis/ice_grid.F90
+  ${SRC_DIR}/ice_sis/ice_model.F90
+  ${SRC_DIR}/ice_sis/ice_spec.F90
+  ${SRC_DIR}/ice_sis/ice_thm.F90
+  ${SRC_DIR}/ice_sis/ice_type.F90
+  ${SRC_DIR}/ice_sis/mask.F90
+  ${SRC_DIR}/ice_sis/rot.F90
+  ${SRC_DIR}/ice_param/ice_albedo.F90
+  ${SRC_DIR}/ice_param/ocean_albedo.F90
+  ${SRC_DIR}/ice_param/ocean_rough.F90
+)

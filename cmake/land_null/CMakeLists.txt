@@ -1,15 +1,14 @@
-set(LAND_DIR "${SRC_DIR}/land_null")
-set(LAND_PARAM_DIR "${SRC_DIR}/land_param")
-set(FMS_DIR "${SRC_DIR}/shared")
+# Copyright ACCESS-NRI and contributors. See the top-level LICENSE file for details.
 
-# common files for both builds
-file(GLOB_RECURSE LAND_SOURCE LIST_DIRECTORIES false FOLLOW_SYMLINKS
-  ${LAND_DIR}/*.[fF]90 ${LAND_PARAM_DIR}/*.[fF]90 )
+add_library(land_null)
 
-add_library(land_null ${LAND_SOURCE})
+target_include_directories(land_null PRIVATE
+  $<TARGET_FILE_DIR:fms_mom5>
+)
 
-target_include_directories(land_null PRIVATE $<TARGET_FILE_DIR:FMS>)
+target_link_libraries(land_null PRIVATE fms_mom5)
 
-#  $<TARGET_FILE_DIR:FMS> ${FMS_DIR}/include/)
-
-target_link_libraries(land_null FMS)
+target_sources(land_null PRIVATE
+  ${SRC_DIR}/land_null/land_model.F90
+  ${SRC_DIR}/land_param/climap_albedo.F90
+)
