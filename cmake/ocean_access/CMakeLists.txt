@@ -1,19 +1,26 @@
 # Copyright ACCESS-NRI and contributors. See the top-level LICENSE file for details.
 
-add_library(ocean)
+add_library(ocean_access)
 
-target_include_directories(ocean PRIVATE
-  $<TARGET_FILE_DIR:fms_mom5>
+target_include_directories(ocean_access PRIVATE
   ${SRC_DIR}/mom5/ocean_param/gotm-4.0/include
   ${SRC_DIR}/mom5/ocean_core
-  ${SRC_DIR}/shared/include/
 )
 
-target_link_libraries(ocean
-  PUBLIC fms_mom5
+target_link_libraries(ocean_access
+  PUBLIC FMS::fms_r8
+  PRIVATE
+    GFDLGTracers::gtracers
 )
 
-target_sources(ocean PRIVATE
+target_compile_definitions(ocean_access PRIVATE ${ACCESS_COMPILE_DEFS})
+
+target_sources(ocean_access PRIVATE
+  ${SRC_DIR}/access/shared/gtracer_flux.F90
+
+  ${SRC_DIR}/mom5/ocean_access/auscom_ice.F90
+  ${SRC_DIR}/mom5/ocean_access/auscom_ice_parameters.F90
+
   ${SRC_DIR}/mom5/ocean_bgc/ocean_bgc_restore.F90
   ${SRC_DIR}/mom5/ocean_bgc/ocean_generic_tracer.F90
   ${SRC_DIR}/mom5/ocean_bgc/ocean_ibgc.F90
@@ -55,6 +62,9 @@ target_sources(ocean PRIVATE
   ${SRC_DIR}/mom5/ocean_core/ocean_velocity.F90
   ${SRC_DIR}/mom5/ocean_core/ocean_workspace.F90
   ${SRC_DIR}/mom5/ocean_core/oda_driver.F90
+
+  ${SRC_DIR}/mom5/ocean_csiro_bgc/csiro_bgc.F90
+  ${SRC_DIR}/mom5/ocean_csiro_bgc/ocmip2_co2calc.F90
 
   ${SRC_DIR}/mom5/ocean_diag/ocean_adv_vel_diag.F90
   ${SRC_DIR}/mom5/ocean_diag/ocean_diagnostics.F90
@@ -177,15 +187,4 @@ target_sources(ocean PRIVATE
 
   ${SRC_DIR}/mom5/ocean_wave/ocean_wave.F90
   ${SRC_DIR}/mom5/ocean_wave/ocean_wave_type.F90
-
-  ${SRC_DIR}/ocean_shared/generic_tracers/FMS_coupler_util.F90
-  ${SRC_DIR}/ocean_shared/generic_tracers/FMS_ocmip2_co2calc.F90
-  ${SRC_DIR}/ocean_shared/generic_tracers/generic_BLING.F90
-  ${SRC_DIR}/ocean_shared/generic_tracers/generic_CFC.F90
-  ${SRC_DIR}/ocean_shared/generic_tracers/generic_COBALT.F90
-  ${SRC_DIR}/ocean_shared/generic_tracers/generic_ERGOM.F90
-  ${SRC_DIR}/ocean_shared/generic_tracers/generic_miniBLING.F90
-  ${SRC_DIR}/ocean_shared/generic_tracers/generic_TOPAZ.F90
-  ${SRC_DIR}/ocean_shared/generic_tracers/generic_tracer.F90
-  ${SRC_DIR}/ocean_shared/generic_tracers/generic_tracer_utils.F90
 )

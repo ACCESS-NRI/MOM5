@@ -1,6 +1,8 @@
 #!/usr/bin/env csh
 
-set root          = $cwd:h                            # The directory you created when you checkout
+set curr          = `dirname $0`
+set abs_curr      = `cd $curr && pwd`
+set root          = $abs_curr:h                       # The directory you created when you checkout
 set code_dir      = $root/src                         # source code directory
 
 # Set up the version string
@@ -10,8 +12,12 @@ set code_dir      = $root/src                         # source code directory
 # strings <executable> | grep 'MOM_COMMIT_HASH='
 setenv GIT_CONFIG_NOGLOBAL 'yes'
 
-set old_hash=`grep 'public :: MOM_COMMIT_HASH' ../src/version/version.F90 | cut -d '"' -f 2 | cut -d '=' -f 2`
-set new_hash=`git rev-parse HEAD`
+if ( -f $code_dir/version/version.F90 ) then
+    set old_hash=`grep 'public :: MOM_COMMIT_HASH' $code_dir/version/version.F90 | cut -d '"' -f 2 | cut -d '=' -f 2`
+else
+    set old_hash=""
+endif
+set new_hash=`git -C $abs_curr rev-parse HEAD`
 
 if ( $old_hash != $new_hash ) then
     echo "Current version hash:  $old_hash"

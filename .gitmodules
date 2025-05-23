@@ -1,3 +1,0 @@
-[submodule "generic_tracers"]
-	path = src/access/generic_tracers
-	url = https://github.com/ACCESS-NRI/GFDL-generic-tracers.git
