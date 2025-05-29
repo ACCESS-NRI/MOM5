@@ -155,11 +155,11 @@ subroutine ocean_topog_init (Domain, Grid, grid_file, vert_coordinate_type)
   call get_local_indices(Domain, isd, ied, jsd, jed, isc, iec, jsc, jec)
   nk = Grid%nk
 
-  allocate (Grid%kmt(isd:ied,jsd:jed))
-  allocate (Grid%ht(isd:ied,jsd:jed))
-  allocate (Grid%htr(isd:ied,jsd:jed))
-  allocate (Grid%kmu(isd:ied,jsd:jed))
-  allocate (Grid%hu(isd:ied,jsd:jed))
+  allocate (Grid%kmt(isd:ied,jsd:jed), source=0)
+  allocate (Grid%ht(isd:ied,jsd:jed), source=0)
+  allocate (Grid%htr(isd:ied,jsd:jed), source=0)
+  allocate (Grid%kmu(isd:ied,jsd:jed), source=0)
+  allocate (Grid%hu(isd:ied,jsd:jed), source=0)
 #else
   call get_domain_offsets(Domain,ioff,joff)
 #endif
