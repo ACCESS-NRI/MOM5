@@ -126,6 +126,7 @@ contains
 !
 subroutine ocean_topog_init (Domain, Grid, grid_file, vert_coordinate_type)
 
+!DIR$ NOOPTIMIZE
   type(ocean_domain_type), intent(inout)        :: Domain
   type(ocean_grid_type),   intent(inout)        :: Grid
   character(len=*),        intent(in), optional :: grid_file
@@ -155,11 +156,11 @@ subroutine ocean_topog_init (Domain, Grid, grid_file, vert_coordinate_type)
   call get_local_indices(Domain, isd, ied, jsd, jed, isc, iec, jsc, jec)
   nk = Grid%nk
 
-  allocate (Grid%kmt(isd:ied,jsd:jed), source=0)
-  allocate (Grid%ht(isd:ied,jsd:jed), source=0)
-  allocate (Grid%htr(isd:ied,jsd:jed), source=0)
-  allocate (Grid%kmu(isd:ied,jsd:jed), source=0)
-  allocate (Grid%hu(isd:ied,jsd:jed), source=0)
+  allocate (Grid%kmt(isd:ied,jsd:jed))
+  allocate (Grid%ht(isd:ied,jsd:jed))
+  allocate (Grid%htr(isd:ied,jsd:jed))
+  allocate (Grid%kmu(isd:ied,jsd:jed))
+  allocate (Grid%hu(isd:ied,jsd:jed))
 #else
   call get_domain_offsets(Domain,ioff,joff)
 #endif
