@@ -126,7 +126,6 @@ contains
 !
 subroutine ocean_topog_init (Domain, Grid, grid_file, vert_coordinate_type)
 
-!DIR$ NOOPTIMIZE
   type(ocean_domain_type), intent(inout)        :: Domain
   type(ocean_grid_type),   intent(inout)        :: Grid
   character(len=*),        intent(in), optional :: grid_file
@@ -359,7 +358,14 @@ subroutine ocean_topog_init (Domain, Grid, grid_file, vert_coordinate_type)
   Grid%htr = 0.0 
   do j=jsd,jed
      do i=isd,ied
-        if(Grid%kmt(i,j) > 0) then    
+        if(Grid%kmt(i,j) > 0) then
+             if(Grid%ht(i,j) <= 0.0) then
+               write(writeunit,'(a,i4,a,i4,a,f12.5)') &
+               '==>ocean_topog_init: WARNING - avoiding divide by zero: ht(',i+Domain%ioff,',',j+Domain%joff, &
+               ') = ',Grid%ht(i,j),'. Setting htr to 0.0.'
+               write(writeunit,'(a, i4)')' This may be due to a missing value in the topography file.', Grid%kmt(i,j)
+               Grid%htr(i,j) = 0.0
+             endif
             Grid%htr(i,j) = 1.0/Grid%ht(i,j)
         endif
      enddo
