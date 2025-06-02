@@ -1356,7 +1356,10 @@ subroutine thickness_initialize(Grid, Thickness)
         enddo
      enddo
  endif
+
+!DIR$ NOVECTOR
  do j=jsd,jed
+!DIR$ NOVECTOR
     do i=isd,ied
        if(Grid%kmt(i,j) > 1) then 
            Thickness%pbot0r(i,j) = 1.0/Thickness%pbot0(i,j)
