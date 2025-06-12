@@ -8,19 +8,16 @@ jobs:
     with:
       # This is the only required input - a path to a jinja-template-able Spack Environment file.
       spack-manifest-path: .github/build-ci/templates/basic.spack.yaml.j2
-      ## But there are many other things you can customize...
-      ## Like the refs that you want to use for the various repos (including this one).
       # ref: github.sha of this repository
-      # spack-config-ref: whatever was in the image
-      # spack-packages-ref: whatever was in the image
-      # spack-ref: whatever was in the image
+      spack-config-ref: '2025.05.000'
+      spack-packages-ref: '2025.06.000'
+      spack-ref: releases/v0.22
 
-      ## As well as paths to other spack.yaml files for installation of compilers and template values
-      #   spack-compiler-manifest-path: .github/build-ci/compilers/compiler.spack.yaml
-      #   spack-manifest-data-path: .github/build-ci/data/basic.spack.yaml.j2.json
+      spack-compiler-manifest-path: .github/build-ci/compilers/compiler.spack.yaml
+      spack-manifest-data-path: .github/build-ci/data/basic.spack.yaml.j2.json
 
       ## Or allow ssh into the container for debugging
-      allow-ssh-into-spack-install: true
+      allow-ssh-into-spack-install: false
 
   outputs:
     runs-on: ubuntu-latest
