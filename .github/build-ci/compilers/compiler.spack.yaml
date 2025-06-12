@@ -1,0 +1,7 @@
+# This spack manifest is for installing compilers locally, before installing packages.
+spack:
+  specs:
+  - intel-oneapi-compilers@2025.0.4 target=x86_64
+  view: false
+  concretizer:
+    unify: false
