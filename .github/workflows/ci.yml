@@ -4,10 +4,15 @@ on:
 jobs:
   build-and-test:
     name: Build and Test
+    strategy:
+      matrix:
+        manifests:
+          - .github/build-ci/templates/basic.spack.yaml.j2
+          - .github/build-ci/templates/advanced.spack.yaml.j2
     uses: access-nri/build-ci/.github/workflows/ci.yml@build-ci-2.0
     with:
       # This is the only required input - a path to a jinja-template-able Spack Environment file.
-      spack-manifest-path: .github/build-ci/templates/basic.spack.yaml.j2
+      spack-manifest-path: ${{ matrix.manifests }}
       # ref: github.sha of this repository
       spack-config-ref: '2025.05.000'
       spack-packages-ref: '2025.06.000'
