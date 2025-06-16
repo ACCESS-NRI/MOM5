@@ -5,6 +5,7 @@ jobs:
   build-and-test:
     name: Build and Test
     strategy:
+      fail-fast: false
       matrix:
         manifests:
           - .github/build-ci/templates/basic.spack.yaml.j2
