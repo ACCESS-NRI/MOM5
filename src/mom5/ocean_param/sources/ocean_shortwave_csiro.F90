@@ -560,6 +560,7 @@ subroutine sw_pen (z_sw, sw_fk)
      ! If the coefficients change, then the floor/ceiling needs 
      ! to be reevaluated. shortwave fraction set to zero for 
      ! depths greater than zmax_pen.
+!DIR$ NOVECTOR
      do i=isc,iec
 
         if ( z_sw(i,j) > zmax_pen .or. Grd%tmask(i,j,kb(i)) == 0) then

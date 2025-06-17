@@ -1358,6 +1358,7 @@ subroutine thickness_initialize(Grid, Thickness)
  endif
 
  do j=jsd,jed
+!DIR$ NOVECTOR
     do i=isd,ied
        if(Grid%kmt(i,j) > 1 .and. Thickness%pbot0(i,j) /= 0.0) then
            Thickness%pbot0r(i,j) = 1.0/Thickness%pbot0(i,j)
@@ -1519,6 +1520,7 @@ subroutine ocean_thickness_init_adjust(Grid, Time, Dens, Ext_mode, Thickness)
              enddo
           enddo
           do j=jsd,jed
+!DIR$ NOVECTOR
              do i=isd,ied
                 if(Grid%kmt(i,j) > 1 .and. Thickness%pbot0(i,j) /= 0.0) then
                     Thickness%pbot0r(i,j) = 1.0/Thickness%pbot0(i,j)
@@ -1746,6 +1748,7 @@ subroutine ocean_thickness_init_adjust(Grid, Time, Dens, Ext_mode, Thickness)
          enddo
       enddo
       do j=jsd,jed
+!DIR$ NOVECTOR
          do i=isd,ied
             if(Grid%kmt(i,j) > 1 .and. Thickness%pbot0(i,j) /= 0.0) then
                 Thickness%pbot0r(i,j) = 1.0/Thickness%pbot0(i,j)
@@ -2253,6 +2256,7 @@ subroutine thickness_restart (Time, Grid, Ext_mode, Thickness, introduce_blobs)
   ! inverse pbot0 values 
   Thickness%pbot0r = 0.0
   do j=jsd,jed
+!DIR$ NOVECTOR
      do i=isd,ied
         if(Grid%kmt(i,j) > 1 .and. Thickness%pbot0(i,j) /= 0.0) then
           Thickness%pbot0r(i,j) = 1.0/Thickness%pbot0(i,j)

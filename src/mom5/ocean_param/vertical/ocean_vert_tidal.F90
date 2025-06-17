@@ -812,6 +812,7 @@ ierr = check_nml_error(io_status,'ocean_vert_tidal_nml')
     ! mask out the deep ocean regions for the drag scheme.  
     if(drag_mask_deep .and. .not. use_legacy_methods) then
         do j=jsc,jec
+!DIR$ NOVECTOR
            do i=isc,iec
               if(Grd%tmask(i,j,1) == 1.0) then 
                   temporary = wrk1_2d(i,j)/(epsln+Grd%ht(i,j))

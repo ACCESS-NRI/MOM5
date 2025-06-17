@@ -829,6 +829,7 @@ ierr = check_nml_error(io_status,'ocean_vert_kpp_mom4p1_nml')
       
       do i=0,nni+1
          zehat = deltaz*(i) + zmin
+!DIR$ NOVECTOR
          do j=0,nnj+1
             usta = deltau*(j) + umin
             zeta = zehat/(usta**3+epsln)
@@ -1297,13 +1298,13 @@ subroutine vert_mix_kpp_mom4p1 (aidif, Time, Thickness, Velocity, T_prog, T_diag
                                  blmc(i-1,j,k,2) +&
                                  blmc(i+1,j,k,2) +&
                                  blmc(i,j-1,k,2) +&
-                                 blmc(i,j+1,k,2)) / active_cells
+                                 blmc(i,j+1,k,2)) * 0.125 ! (instead of dividing by active_cells==8.0, multiplying by the exact 1/8)
                        wrk2(i,j,k) =  &
                             (4.0*blmc(i,j,k,3) +&
                               blmc(i-1,j,k,3)  +&
                               blmc(i+1,j,k,3)  +&
                               blmc(i,j-1,k,3)  +&
-                              blmc(i,j+1,k,3)) / active_cells
+                              blmc(i,j+1,k,3)) * 0.125 ! (instead of dividing by active_cells==8.0, multiplying by the exact 1/8)
                    else
                        wrk1(i,j,k) = blmc(i,j,k,2)
                        wrk2(i,j,k) = blmc(i,j,k,3)
@@ -1700,6 +1701,7 @@ subroutine bldepth(Thickness, Velocity, sw_frac_zt, do_wave)
         call wscale (iwscale_use_hbl_eq_zt, Thickness%depth_zt(:,:,kl), Velocity, do_wave)
 
         do j=jsc,jec
+!DIR$ NOVECTOR
           do i=isc,iec
 
             if((kbl(i,j) == Grd%kmt(i,j))) then
@@ -1918,6 +1920,7 @@ subroutine bldepth(Thickness, Velocity, sw_frac_zt, do_wave)
 !-----------------------------------------------------------------------
       if(limit_with_hekman) then
       do j=jsc,jec
+!DIR$ NOVECTOR
         do i = isc,iec
           if (bfsfc(i,j) > 0.0) then
              hekman = cekman * Velocity%ustar(i,j) / (abs(Grd%f(i,j))+epsln)
@@ -1989,6 +1992,7 @@ subroutine bldepth(Thickness, Velocity, sw_frac_zt, do_wave)
 !-----------------------------------------------------------------------
 
       do j=jsc,jec
+!DIR$ NOVECTOR
         do i = isc,iec
           if (kbl(i,j)==0 .or. kbl(i,j)==1) cycle
 
@@ -2075,6 +2079,7 @@ subroutine wscale(iwscale_use_hbl_eq_zt, zt_kl, Velocity, do_wave)
       if (iwscale_use_hbl_eq_zt == 1) then
 
         do j=jsc,jec
+!DIR$ NOVECTOR
           do i=isc,iec
             zehat = von_karman * sigma(i,j) * zt_kl(i,j) * bfsfc(i,j)
 
@@ -2115,6 +2120,7 @@ subroutine wscale(iwscale_use_hbl_eq_zt, zt_kl, Velocity, do_wave)
       else
 
         do j=jsc,jec
+!DIR$ NOVECTOR
           do i=isc,iec
             zehat = von_karman * sigma(i,j) * hbl(i,j)   * bfsfc(i,j)
 
@@ -2407,6 +2413,7 @@ tau = Time%tau
 
     do ki=1,nk
        do j=jsc,jec
+!DIR$ NOVECTOR
           do i=isc,iec
 
 !-----------------------------------------------------------------------
@@ -2657,6 +2664,7 @@ subroutine blmix_kpp(Thickness, Velocity, diff_cbt, visc_cbu, do_wave)
 !-----------------------------------------------------------------------
 
       do j=jsc,jec
+!DIR$ NOVECTOR
         do i= isc,iec
           if (kbl(i,j)== 0 .or. kbl(i,j)==1) cycle
           sig      =  Thickness%depth_zt(i,j,kbl(i,j)-1)  / (hbl(i,j)+epsln)
@@ -2671,6 +2679,7 @@ subroutine blmix_kpp(Thickness, Velocity, diff_cbt, visc_cbu, do_wave)
       call wscale(iwscale_use_hbl_eq_zt, zt_kl_dummy, Velocity, do_wave)
 
       do j=jsc,jec
+!DIR$ NOVECTOR
         do i = isc,iec
           if (kbl(i,j)==0 .or. kbl(i,j)==1) cycle
           sig = Thickness%depth_zt(i,j,kbl(i,j)-1) / (hbl(i,j)+epsln)
@@ -2724,6 +2733,7 @@ real, dimension(isd:,jsd:,:),   intent(in) :: visc_cbu
 
       do ki=1,nk-1
         do j=jsc,jec
+!DIR$ NOVECTOR
           do i = isc,iec
 
             if(ki == (kbl(i,j) - 1) ) then

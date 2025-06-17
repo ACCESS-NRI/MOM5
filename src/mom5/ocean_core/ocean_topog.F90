@@ -357,6 +357,7 @@ subroutine ocean_topog_init (Domain, Grid, grid_file, vert_coordinate_type)
   ! set inverse depth on t-cells 
   Grid%htr = 0.0 
   do j=jsd,jed
+!DIR$ NOVECTOR
      do i=isd,ied
         if(Grid%kmt(i,j) > 0 .and. Grid%ht(i,j) /= 0.0) then
             Grid%htr(i,j) = 1.0/Grid%ht(i,j)

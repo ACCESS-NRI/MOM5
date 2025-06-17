@@ -2406,6 +2406,7 @@ subroutine compute_eady_rate(Time, Thickness, T_prog, Dens, eady_termx, eady_ter
       enddo
       do k=1,nk
          do j=jsc,jec
+!DIR$ NOVECTOR
             do i=isc,iec
                if(Thickness%depth_zt(i,j,k) <= eady_mld(i,j)) then 
                    eady_rate(i,j,k) = Grd%tmask(i,j,k)*wrk2_2d(i,j)/(wrk1_2d(i,j)+epsln)
@@ -3134,6 +3135,7 @@ subroutine transport_on_rho_gm (Time, Dens, tx_trans_gm, ty_trans_gm)
             do j = jsc,jec
                if (rho_maxj(j) < Dens%potrho_ref(k_rho)) cycle
                if (rho_minj(j) > Dens%potrho_ref(k_rho)) cycle
+!DIR$ NOVECTOR
                do i = isc,iec
                   if (    Dens%potrho_ref(k_rho) >  Dens%potrho(i,j,k)  ) then
                       if (Dens%potrho_ref(k_rho) <= Dens%potrho(i,j,k+1)) then 

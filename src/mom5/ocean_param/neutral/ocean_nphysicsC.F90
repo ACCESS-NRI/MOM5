@@ -3243,6 +3243,7 @@ subroutine fx_flux_ndiffuse(Time, Thickness, T_prog, k)
      kpkr = min(k+kr,nk)
      do ip=0,1 
         do j=jsc,jec
+!DIR$ NOVECTOR
            do i=isc-1,iec
 
               drhodz   = drhodzh(i+ip,j,k,kr)
@@ -3380,6 +3381,7 @@ subroutine fy_flux_ndiffuse(Time, Thickness, T_prog, k)
      kpkr = min(k+kr,nk)
      do jq=0,1  
        do j=jsc-1,jec
+!DIR$ NOVECTOR
           do i=isc,iec
  
               drhodz   = drhodzh(i,j+jq,k,kr) 

@@ -1426,10 +1426,24 @@ subroutine compute_bldepth(Time, Thickness, Dens, T_prog, surf_blthick)
            enddo
         enddo
      enddo
-     where(kblt>=min_kblt)
-        buoy_freq_ave    = sqrt(abs(buoy_freq_ave)/wrk1_2d) 
-        front_length_inv = min(front_length_const_inv, coriolis_param/(epsln+wrk1_2d*buoy_freq_ave)) 
-     endwhere
+     do j=jsd,jed
+!DIR$ NOVECTOR
+        do i=isd,ied
+            if(kblt(i,j) >= min_kblt) then
+               buoy_freq_ave(i,j) = sqrt(abs(buoy_freq_ave(i,j))/wrk1_2d(i,j))
+               !MS (11 Jun, 2025): The first argument used to be front_length_const_inv but I have changed to front_length_inv to silence a compiler error
+               !front_length_inv is initialized to front_length_const_inv at the top of this block
+               front_length_inv(i,j) = min(front_length_inv(i,j), coriolis_param(i,j)/(epsln+wrk1_2d(i,j)*buoy_freq_ave(i,j)))
+            endif
+         enddo
+     enddo
+
+! MS: (11 Jun, 2025): The following code was commented out in the original code, and replaced with the double for loop code above.
+! !DIR$ NOVECTOR
+!      where(kblt>=min_kblt)
+!         buoy_freq_ave    = sqrt(abs(buoy_freq_ave)/wrk1_2d)
+!         front_length_inv = min(front_length_const_inv, coriolis_param/(epsln+wrk1_2d*buoy_freq_ave))
+!      endwhere
   endif
 
 

@@ -3506,6 +3506,7 @@ subroutine get_ocean_sbc(Time, Ice_ocean_boundary, Thickness, Dens, Ext_mode, T_
   ! and it is for these schemes we need to reach into halos with smf_bgrid.
   Velocity%smf_cgrid(:,:,:) = 0.0
   do j=jsc,jec
+!DIR$ NOVECTOR
      do i=isc,iec
         if(Grd%umask(i,j,1) + Grd%umask(i,j-1,1) > 0.0) then 
             Velocity%smf_cgrid(i,j,1) =                                                                   &
