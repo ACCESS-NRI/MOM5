@@ -9,32 +9,11 @@ jobs:
       matrix:
         manifests:
           - .github/build-ci/templates/basic.spack.yaml.j2
-          - .github/build-ci/templates/advanced.spack.yaml.j2
+          - .github/build-ci/templates/access-om2.spack.yaml.j2
+          - .github/build-ci/templates/access-om3.spack.yaml.j2
+          - .github/build-ci/templates/access-esm1p5.spack.yaml
+          - .github/build-ci/templates/access-esm1p6.spack.yaml.j2
     uses: access-nri/build-ci/.github/workflows/ci.yml@build-ci-2.0
     with:
-      # This is the only required input - a path to a jinja-template-able Spack Environment file.
       spack-manifest-path: ${{ matrix.manifests }}
-      # ref: github.sha of this repository
-      spack-config-ref: '2025.05.000'
-      spack-packages-ref: '2025.06.000'
-      spack-ref: releases/v0.22
-
-      spack-compiler-manifest-path: .github/build-ci/compilers/compiler.spack.yaml
-      spack-manifest-data-path: .github/build-ci/data/basic.spack.yaml.j2.json
-
-      ## Or allow ssh into the container for debugging
       allow-ssh-into-spack-install: false
-
-  outputs:
-    runs-on: ubuntu-latest
-    needs: build-and-test
-    steps:
-      - run: |
-          echo "The concretization graph is:"
-          echo "${{ needs.build-and-test.outputs.spec-concretization-graph }}"
-          echo "The files are found in:"
-          echo "${{ needs.build-and-test.outputs.spack-files-artifact-url }}"
-          echo "The ${{ github.repository }} sha is ${{ needs.build-and-test.outputs.sha }}"
-          echo "The spack sha is ${{ needs.build-and-test.outputs.spack-sha }}"
-          echo "The spack config sha is: ${{ needs.build-and-test.outputs.spack-config-sha }}"
-          echo "The spack packages sha is: ${{ needs.build-and-test.outputs.spack-packages-sha }}"
