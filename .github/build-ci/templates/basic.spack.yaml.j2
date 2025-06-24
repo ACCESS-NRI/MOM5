@@ -5,7 +5,7 @@
 spack:
   specs:
     # ref is filled in by the workflow
-    - mom5@git.{{ ref }}=access-om2 %intel@{{ compiler_version }} target=x86_64
+    - mom5@git.{{ ref }}=access-om2 %intel@2021.10.0 target=x86_64
   packages:
     # We can still constrain stuff as we always have - or add the dependency to the above spec with `^libaccessom2@access-om2`
     libaccessom2:
