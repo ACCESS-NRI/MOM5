@@ -16,4 +16,3 @@ jobs:
     uses: access-nri/build-ci/.github/workflows/ci.yml@build-ci-2.0
     with:
       spack-manifest-path: ${{ matrix.manifests }}
-      allow-ssh-into-spack-install: false
