@@ -5,7 +5,7 @@
 spack:
   specs:
     # ref is filled in by the workflow
-    - access-esm1p5 ^mom5@git.{{ ref }}=access-esm1.5 %intel@2021.10.4 target=x86_64
+    - access-esm1p5 ^mom5@git.{{ ref }}=access-esm1.5 %intel@2021.10.0 target=x86_64
   view: true
   concretizer:
     # Due to different compilers under the same source root
