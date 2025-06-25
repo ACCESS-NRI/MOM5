@@ -10,9 +10,11 @@ jobs:
         manifests:
           - .github/build-ci/templates/basic.spack.yaml.j2
           - .github/build-ci/templates/access-om2.spack.yaml.j2
-          - .github/build-ci/templates/access-om3.spack.yaml.j2
           - .github/build-ci/templates/access-esm1p5.spack.yaml
           - .github/build-ci/templates/access-esm1p6.spack.yaml.j2
     uses: access-nri/build-ci/.github/workflows/ci.yml@build-ci-2.0
     with:
       spack-manifest-path: ${{ matrix.manifests }}
+      spack-packages-ref: convert-private-repos-from-ssh-to-https-clone
+    secrets:
+      spack-install-command-pat: ${{ secrets.TEST_SPACK_INSTALL_COMMAND_PAT }}
