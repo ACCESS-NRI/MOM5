@@ -43,67 +43,29 @@ logical :: iceform_adj_salt = .false.
 !real    :: bg_diff_eq = 1.0e-6    !lowest bg_diff at equator
 !
 
-!!Red Sea (2 boxes)
-!integer :: irs1 = 314
-!integer :: ire1 = 324
-!integer :: jrs1 = 169
-!integer :: jre1 = 196
-!integer :: irs2 = 325
-!integer :: ire2 = 331
-!integer :: jrs2 = 169
-!integer :: jre2 = 180
-!!Gulf Bay (1 box)
-!integer :: igs = 328
-!integer :: ige = 345
-!integer :: jgs = 189
-!integer :: jge = 198
-!
-!!maximum depth/level
-!integer :: ksmax = 5        !deepest level of the Red Sea/Gulf Bay 
-!!
-!integer :: sfix_hours = 12  !do s mixing every sfix_hours.
-!!
-!logical :: redsea_gulfbay_sfix = .false.
-!logical :: do_sfix_now = .false.
+!Red Sea (2 boxes)
+integer :: irs1 = 314
+integer :: ire1 = 324
+integer :: jrs1 = 169
+integer :: jre1 = 196
+integer :: irs2 = 325
+integer :: ire2 = 331
+integer :: jrs2 = 169
+integer :: jre2 = 180
+!Gulf Bay (1 box)
+integer :: igs = 328
+integer :: ige = 345
+integer :: jgs = 189
+integer :: jge = 198
 
-!-------------------------------------------------------------------------------------------
-!May-July 2025 modification to horizontal mixing salinity for some selected regions (inland seas)
-!         where salinity suffers dramatic (up) drift due to strong evap o/a dry climate and
-!         narrow-channel-caused low efficiency of sea-oean communication
+!maximum depth/level
+integer :: ksmax = 5        !deepest level of the Red Sea/Gulf Bay 
+!
+integer :: sfix_hours = 12  !do s mixing every sfix_hours.
+!
+logical :: redsea_gulfbay_sfix = .false.
 logical :: do_sfix_now = .false.
-!
-integer :: sfix_hours = 12  !do salinity mixing every 'sfix_hours' hours.
-!
-!Define "boxes" to be horizontally mixed in terms of global domain (i, j, k):
-!Red Sea
-logical :: sfix_redsea = .true.
-integer :: irss = 318   !314
-integer :: irse = 332
-integer :: jrss = 170
-integer :: jrse = 188
-integer :: krsbox = 5   !maximum depth/level
-!Persian Gulf
-logical :: sfix_persiangulf = .true.
-integer :: ipgs = 334
-integer :: ipge = 342
-integer :: jpgs = 189
-integer :: jpge = 195
-integer :: kpgbox = 5
-!East Mediterranean Sea:
-logical :: sfix_eastmedsea = .true.
-integer :: iemss = 285
-integer :: iemse = 307  !(316 upto east coast)
-integer :: jemss = 198
-integer :: jemse = 213  !(213 (upto north coase)
-integer :: kemsbox = 30 !(deepest level is down to k=42 for E.Med. Sea)
-!West Mediterranean Sea:
-logical :: sfix_westmedsea = .true.
-integer :: iwmss = 270
-integer :: iwmse = 293
-integer :: jwmss = 200
-integer :: jwmse = 208
-integer :: kwmsbox = 30 !deepest level is down to k=39 for W.Med. Sea
-!----------------------------------------------------------------------------------
+logical :: do_sfix_at_start = .false.
 logical :: chk_i2o_fields = .false.
 logical :: chk_o2i_fields = .false.
 ! How often to dump the coupling fields if either of the above options are .true.
@@ -127,17 +89,13 @@ namelist /auscom_ice_nml/  dt_cpl, &
                    frazil_factor,                       & 
                    iceform_adj_salt,                    & 
                    sign_stflx,                          & 
+                   redsea_gulfbay_sfix,                 & 
+                   irs1, ire1, jrs1, jre1,              & 
+                   irs2, ire2, jrs2, jre2,              & 
+                   igs, ige, jgs, jge,                  & 
+                   ksmax,                               & 
                    sfix_hours,                          &
-!--------------------------------------------------------------------------
-                   sfix_redsea,                         &
-                   irss, irse, jrss, jrse, krsbox,      &
-                   sfix_persiangulf,                    &
-                   ipgs, ipge, jpgs, jpge, kpgbox,      &
-                   sfix_eastmedsea,                     &
-                   iemss, iemse, jemss, jemse, kemsbox, &
-                   sfix_westmedsea,                     &
-                   iwmss, iwmse, jwmss, jwmse, kwmsbox, &
-!--------------------------------------------------------------------------
+                   do_sfix_at_start,                    &
                    chk_i2o_fields,                      &
                    chk_o2i_fields,                      &
                    chk_fields_period,                   &
