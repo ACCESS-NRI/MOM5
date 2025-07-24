@@ -2105,6 +2105,15 @@ subroutine ocean_model_init(Ocean, Ocean_state, Time_init, Time_in, &
        endif
        call mpp_clock_end(id_sfix)
     ENDIF
+    !if (redsea_gulfbay_sfix .and. do_sfix_now) then
+    !    call mpp_clock_begin(id_sfix)
+    !    if (mpp_pe() == mpp_root_pe()) then
+    !        call print_time(time_start_update, 'Calling redsea_gulfbay_hmix_s at runtime = ')
+    !    endif
+    !    call redsea_gulfbay_hmix_s(Time, Grid, Domain, Thickness, &
+    !                               T_prog(index_salt))
+    !    call mpp_clock_end(id_sfix)
+    !endif
 #endif
 
     call update_ocean_drifters(Velocity, Adv_vel, T_prog(:), Grid, Time)
@@ -2197,7 +2206,118 @@ subroutine ocean_model_init(Ocean, Ocean_state, Time_init, Time_in, &
   deallocate (salt_vol_sums)
 
   end subroutine sfix_box
+!======================================================================  
+! *** The "redsea_gulfbay_hmix_s" routine below is dropped ***
+  subroutine redsea_gulfbay_hmix_s(Time, Grid, Domain, Thickness, Salt)
 
+  use mpp_mod,           only : mpp_sum
+
+  use auscom_ice_parameters_mod, only : irs1, ire1, jrs1, jre1, irs2, ire2,jrs2, jre2, &
+                                        igs, ige, jgs, jge, ksmax
+
+  implicit none
+
+  type(ocean_time_type),         intent(in) :: Time
+  type(ocean_grid_type),         intent(in) :: Grid ! grid information for ocean model 
+  type(ocean_domain_type),       intent(in)  :: Domain ! domain grid information for ocean model 
+  type(ocean_thickness_type),    intent(in) :: Thickness
+  type(ocean_prog_tracer_type),  intent(inout) :: Salt
+
+  real :: volume = 0.0
+  real :: ave_sp = 0.0
+
+  real, dimension(:,:,:), allocatable :: salt_vol_sums  ! total salt and volume sums. Red sea salt(:,1,1) vol(:,2,1)
+                                                    !                             Gulf      salt(:,1,2) vol(:,2,2)
+
+  integer :: tau, taup1
+  integer :: i, j, k
+
+  integer :: isc, iec, jsc, jec
+  integer :: isd, ied, jsd, jed
+
+  tau   = Time%tau
+  taup1 = Time%taup1
+
+  call get_local_indices(Domain, isd, ied, jsd, jed, isc, iec, jsc, jec)
+
+  allocate(salt_vol_sums(ksmax,2,2))
+  salt_vol_sums = 0.0
+  do k = 1, ksmax
+    ! 
+    !for Red Sea
+    !
+    do j=max(jrs1,jsc),min(jre1,jec)
+      do i=max(irs1,isc),min(ire1,iec)
+         if(Grid%tmask(i,j,k) == 1.0) then
+             volume = Grid%dat(i,j) * Thickness%dzt(i,j,k)
+             salt_vol_sums(k,1,1) = salt_vol_sums(k,1,1) + Salt%field(i,j,k,taup1) * volume
+             salt_vol_sums(k,2,1) = salt_vol_sums(k,2,1) + volume
+          endif
+      enddo
+    enddo
+    do j=max(jrs2,jsc),min(jre2,jec)
+      do i=max(irs2,isc),min(ire2,iec)
+         if(Grid%tmask(i,j,k) == 1.0) then
+             volume = Grid%dat(i,j) * Thickness%dzt(i,j,k)
+             salt_vol_sums(k,1,1) = salt_vol_sums(k,1,1) + Salt%field(i,j,k,taup1) * volume
+             salt_vol_sums(k,2,1) = salt_vol_sums(k,2,1) + volume
+         endif
+      enddo
+    enddo
+    ! 
+    !for Gulf Bay
+    !
+    do j=max(jgs,jsc),min(jge,jec)
+      do i=max(igs,isc),min(ige,iec)
+         if(Grid%tmask(i,j,k) == 1.0) then
+             volume = Grid%dat(i,j) * Thickness%dzt(i,j,k)
+             salt_vol_sums(k,1,2) = salt_vol_sums(k,1,2) + Salt%field(i,j,k,taup1) * volume
+             salt_vol_sums(k,2,2) = salt_vol_sums(k,2,2) + volume
+          endif
+      enddo
+    enddo
+
+  enddo   !k=1,ksmax
+
+  call mpp_sum(salt_vol_sums, size(salt_vol_sums))
+
+! Replace by sums
+! Note that we fill to domain edge. No need to update halo
+
+! Red Sea
+  do k=1,ksmax
+     if ( salt_vol_sums(k,2,1) /= 0.0 ) then
+        ave_sp = salt_vol_sums(k,1,1) / salt_vol_sums(k,2,1)
+        do j=max(jrs1,jsd),min(jre1,jed)
+           do i=max(irs1,isd),min(ire1,ied)
+              Salt%field(i,j,k,taup1) =  ave_sp * Grid%tmask(i,j,k)
+           enddo
+        enddo
+        do j=max(jrs2,jsd),min(jre2,jed)
+           do i=max(irs2,isd),min(ire2,ied)
+              Salt%field(i,j,k,taup1) =  ave_sp * Grid%tmask(i,j,k)
+           enddo
+       enddo
+    endif
+
+!Persian gulf
+
+    if ( salt_vol_sums(k,2,2) /= 0.0 ) then
+        ave_sp = salt_vol_sums(k,1,2) / salt_vol_sums(k,2,2)
+        do j=max(jgs,jsd),min(jge,jed)
+           do i=max(igs,isd),min(ige,ied)
+              Salt%field(i,j,k,taup1) =  ave_sp * Grid%tmask(i,j,k)
+           enddo
+        enddo
+    endif
+  enddo
+   
+    
+  
+
+  deallocate (salt_vol_sums)
+
+  end subroutine redsea_gulfbay_hmix_s
 #endif
 
 !#######################################################################
