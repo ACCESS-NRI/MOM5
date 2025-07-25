@@ -77,7 +77,7 @@ real,         public, parameter :: GRAV   = 9.80_r8_kind             !< Accelera
 real,         public, parameter :: RDGAS  = 287.04_r8_kind           !< Gas constant for dry air [J/kg/deg]
 real,         public, parameter :: RVGAS  = 461.50_r8_kind           !< Gas constant for water vapor [J/kg/deg]
 ! Extra:
-real,         public, parameter :: HLV = 2.500e6_r8_kind             !< Latent heat of evaporation [J/kg]
+real,         public, parameter :: HLV = 2.501e6_r8_kind             !< Latent heat of evaporation [J/kg]
 real,         public, parameter :: HLF = 3.34e5_r8_kind              !< Latent heat of fusion [J/kg]
 real,         public, parameter :: KAPPA  = 2.0_r8_kind/7.0_r8_kind  !< RDGAS / CP_AIR [dimensionless]
 real,         public, parameter :: CP_AIR = RDGAS/KAPPA              !< Specific heat capacity of dry air at constant pressure [J/kg/deg]
