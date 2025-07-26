@@ -77,6 +77,7 @@ module mom_oasis3_interface_mod
 !
 
 use mod_prism
+use platform_mod, only: r8_kind
 
 !MOM4 modules: 
 use fms_mod,         only: file_exist
@@ -715,7 +716,7 @@ do jf =  1, num_fields_in
      Ice_ocean_boundary%sw_flux_nir_dir(iisc:iiec,jjsc:jjec) =  frac_nir_dir*vwork(iisc:iiec,jjsc:jjec)
      Ice_ocean_boundary%sw_flux_nir_dif(iisc:iiec,jjsc:jjec) =  frac_nir_dif*vwork(iisc:iiec,jjsc:jjec)
   case('q_flux')
-     Ice_ocean_boundary%q_flux(iisc:iiec,jjsc:jjec) =  vwork(iisc:iiec,jjsc:jjec)/hlv
+     Ice_ocean_boundary%q_flux(iisc:iiec,jjsc:jjec) =  vwork(iisc:iiec,jjsc:jjec)/(2.501e6_r8_kind)
   case('t_flux')
      Ice_ocean_boundary%t_flux(iisc:iiec,jjsc:jjec) =  vwork(iisc:iiec,jjsc:jjec)
   case('lw_flux')
