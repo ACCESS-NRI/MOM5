@@ -1,0 +1,73 @@
+name: Scheduled Build
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 14 * * 0' # Every Sunday at 14:00 UTC
+jobs:
+  pre-access-esm1p5:
+    name: Pre-access-esm1.5
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: access-esm1.5
+
+      - name: Set up matrix
+        id: set-matrix
+        # Find all relevant files under .github/build-ci/manifests/scheduled/access-esm1.5
+        # then output them as a JSON array (minus the last comma)
+        run: |
+          files=$(find .github/build-ci/manifests/scheduled/access-esm1.5 -iname '*.j2' -printf '"%p",')
+          echo "matrix=[${files%,}]" >> $GITHUB_OUTPUT
+  access-esm1p5:
+    name: access-esm1.5
+    needs: pre-access-esm1p5
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        file: ${{ fromJson(needs.pre-access-esm1p5.outputs.matrix) }}
+    uses: access-nri/build-ci/.github/workflows/ci.yml@v2
+    with:
+      spack-manifest-path: ${{ matrix.file }}
+      spack-manifest-data-path: .github/build-ci/data/standard.json
+      allow-ssh-into-spack-install: false  # If true, PR author must ssh into instance to complete job
+      # spack-packages-ref: main
+      # spack-config-ref: main
+      # spack-ref: releases/v0.22
+
+  pre-master:
+    name: Pre-master
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: Set up matrix
+        id: set-matrix
+        # Find all relevant files under .github/build-ci/manifests/scheduled/master
+        # then output them as a JSON array (minus the last comma)
+        run: |
+          files=$(find .github/build-ci/manifests/scheduled/master -iname '*.j2' -printf '"%p",')
+          echo "matrix=[${files%,}]" >> $GITHUB_OUTPUT
+  master:
+    name: master
+    needs: pre-master
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        file: ${{ fromJson(needs.pre-master.outputs.matrix) }}
+    uses: access-nri/build-ci/.github/workflows/ci.yml@v2
+    with:
+      spack-manifest-path: ${{ matrix.file }}
+      spack-manifest-data-path: .github/build-ci/data/standard.json
+      allow-ssh-into-spack-install: false  # If true, PR author must ssh into instance to complete job
+      # spack-packages-ref: main
+      # spack-config-ref: main
+      # spack-ref: releases/v0.22

@@ -1,0 +1,31 @@
+spack:
+  specs:
+  - 'mom5@git.{{ ref }}=access-esm1.6'
+  packages:
+    oasis3-mct:
+      require:
+      - '@{{ oasis3_mct_version_esm1p6 }}'
+    access-fms:
+      require:
+      - '@{{ access_fms_version }}'
+    access-generic-tracers:
+      require:
+      - '@{{ access_generic_tracers_version }}'
+    access-mocsy:
+      require:
+      - '@{{ access_mocsy_version }}'
+    netcdf-c:
+      require:
+      - '@{{ netcdf_c_version}}'
+    netcdf-fortran:
+      require:
+      - '@{{ netcdf_fortran_version }}'
+    openmpi:
+      require:
+      - '@{{ openmpi_version }}'
+    all:
+      require:
+      - '%{{ intel_compiler }} target=x86_64'
+  concretizer:
+    unify: false
+  view: false

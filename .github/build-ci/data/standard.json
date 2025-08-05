@@ -1,0 +1,22 @@
+{
+  "intel_compiler": "intel@2021.10.0",
+  "gcc_compiler": "gcc@13.2.0",
+  "oneapi_compiler": "oneapi@2025.2.0",
+  "cice4_version": "git.access-esm1.5-2025.04.001=access-esm1.5",
+  "cice5_version_om2": "git.2025.03.001=access-om2",
+  "cice5_version_esm1p6": "git.access-esm1.6-2025.07.001=access-esm1.6",
+  "um_version_esm1p6": "git.access-esm1.6-2025.06.000=access-esm1.6",
+  "um_version_esm1p5": "git.2024.10.17=access-esm1.5",
+  "gcom4_version": "git.2024.05.28=access-esm1.5",
+  "libaccessom2_version": "git.2025.05.001=access-om2",
+  "oasis3_mct_version_om2": "git.2025.03.001=access-om2",
+  "oasis3_mct_version_esm1p6": "git.access-esm1.5-2025.03.001=access-esm1.5",
+  "oasis3_mct_version_esm1p5": "git.access-esm1.5_2024.05.24=access-esm1.5",
+  "netcdf_c_version": "4.9.2",
+  "netcdf_fortran_version": "4.6.1",
+  "parallelio_version": "2.6.2",
+  "openmpi_version": "5.0.5",
+  "access_fms_version": "git.mom5-2025.05.000=mom5",
+  "access_generic_tracers_version": "git.2025.07.001=main",
+  "access_mocsy_version": "git.2025.07.002=gtracers"
+}

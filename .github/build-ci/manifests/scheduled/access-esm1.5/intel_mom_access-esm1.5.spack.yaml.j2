@@ -1,0 +1,22 @@
+spack:
+  specs:
+  - mom5@git.{{ ref }}=access-esm1.5
+  packages:
+    oasis3-mct:
+      require:
+      - '@{{ oasis3_mct_version_esm1p5 }}'
+    netcdf-c:
+      require:
+      - '@{{ netcdf_c_version}}'
+    netcdf-fortran:
+      require:
+      - '@{{ netcdf_fortran_version }}'
+    openmpi:
+      require:
+      - '@{{ openmpi_version }}'
+    all:
+      require:
+      - '%{{ intel_compiler }} target=x86_64'
+  concretizer:
+    unify: false
+  view: false

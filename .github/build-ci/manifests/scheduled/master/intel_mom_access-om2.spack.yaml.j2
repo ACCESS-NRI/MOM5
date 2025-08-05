@@ -1,0 +1,36 @@
+spack:
+  specs:
+  - matrix:
+    - ['mom5@git.{{ ref }}=access-om2']
+    - ['build_system=cmake', 'build_system=makefile']
+  packages:
+    libaccessom2:
+      require:
+      - '@{{ libaccessom2_version }}'
+    oasis3-mct:
+      require:
+      - '@{{ oasis3_mct_version_om2 }}'
+    access-fms:
+      require:
+      - '@{{ access_fms_version }}'
+    access-generic-tracers:
+      require:
+      - '@{{ access_generic_tracers_version }}'
+    access-mocsy:
+      require:
+      - '@{{ access_mocsy_version }}'
+    netcdf-c:
+      require:
+      - '@{{ netcdf_c_version}}'
+    netcdf-fortran:
+      require:
+      - '@{{ netcdf_fortran_version }}'
+    openmpi:
+      require:
+      - '@{{ openmpi_version }}'
+    all:
+      require:
+      - '%{{ intel_compiler }} target=x86_64'
+  concretizer:
+    unify: false
+  view: false

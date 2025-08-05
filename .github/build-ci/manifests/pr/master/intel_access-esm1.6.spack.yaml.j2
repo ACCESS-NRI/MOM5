@@ -1,0 +1,43 @@
+spack:
+  specs:
+  - 'access-esm1p6@latest cice=5'
+  packages:
+    mom5:
+      require:
+      - '@git.{{ ref }}=access-esm1.6'
+    cice5:
+      require:
+      - '@{{ cice5_version_esm1p6 }}'
+    um7:
+      require:
+      - '@{{ um_version_esm1p6 }}'
+    gcom4:
+      require:
+      - '@{{ gcom4_version }}'
+    oasis3-mct:
+      require:
+      - '@{{ oasis3_mct_version_esm1p6 }}'
+    access-fms:
+      require:
+      - '@{{ access_fms_version }}'
+    access-generic-tracers:
+      require:
+      - '@{{ access_generic_tracers_version }}'
+    access-mocsy:
+      require:
+      - '@{{ access_mocsy_version }}'
+    netcdf-c:
+      require:
+      - '@{{ netcdf_c_version}}'
+    netcdf-fortran:
+      require:
+      - '@{{ netcdf_fortran_version }}'
+    openmpi:
+      require:
+      - '@{{ openmpi_version }}'
+    all:
+      require:
+      - '%{{ intel_compiler }} target=x86_64'
+  concretizer:
+    unify: false
+  view: false

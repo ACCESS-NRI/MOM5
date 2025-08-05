@@ -1,0 +1,46 @@
+spack:
+  specs:
+  - 'access-om2@latest'
+  packages:
+    mom5:
+      require:
+      - '@git.{{ ref }}=access-om2'
+    cice5:
+      require:
+      - '@{{ cice5_version_om2 }}'
+    libaccessom2:
+      require:
+      - '@{{ libaccessom2_version }}'
+    oasis3-mct:
+      require:
+      - '@{{ oasis3_mct_version_om2 }}'
+    access-fms:
+      require:
+      - '@{{ access_fms_version }}'
+    access-generic-tracers:
+      require:
+      - '@{{ access_generic_tracers_version }}'
+    access-mocsy:
+      require:
+      - '@{{ access_mocsy_version }}'
+    netcdf-c:
+      require:
+      - '@{{ netcdf_c_version}}'
+    netcdf-fortran:
+      require:
+      - '@{{ netcdf_fortran_version }}'
+    parallelio:
+      require:
+      - '@{{ parallelio_version }}'
+    openmpi:
+      require:
+      - '@{{ openmpi_version }}'
+    gcc-runtime:
+      require:
+      - '%gcc'
+    all:
+      require:
+      - '%{{ oneapi_compiler }} target=x86_64'
+  concretizer:
+    unify: false
+  view: false
