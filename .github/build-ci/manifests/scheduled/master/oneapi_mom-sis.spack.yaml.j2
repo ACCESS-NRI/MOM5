@@ -1,0 +1,22 @@
+spack:
+  specs:
+  - 'mom5@git.{{ scheduled_ref }}=mom_sis'
+  packages:
+    netcdf-c:
+      require:
+      - '@{{ netcdf_c_version}}'
+    netcdf-fortran:
+      require:
+      - '@{{ netcdf_fortran_version }}'
+    openmpi:
+      require:
+      - '@{{ openmpi_version }}'
+    gcc-runtime:
+      require:
+      - '%gcc'
+    all:
+      require:
+      - '%{{ oneapi_compiler }} target=x86_64'
+  concretizer:
+    unify: false
+  view: false
