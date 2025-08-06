@@ -1,4 +1,5 @@
-[![Test MOM5 compilation](https://github.com/ACCESS-NRI/MOM5/actions/workflows/test-build.yml/badge.svg?branch=master)](https://github.com/ACCESS-NRI/MOM5/actions/workflows/test-build.yml)
+[![Build](https://github.com/ACCESS-NRI/MOM5/actions/workflows/ci.yml/badge.svg)](https://github.com/ACCESS-NRI/MOM5/actions/workflows/ci.yml)
+[![Scheduled Build](https://github.com/ACCESS-NRI/MOM5/actions/workflows/scheduled.yml/badge.svg)](https://github.com/ACCESS-NRI/MOM5/actions/workflows/scheduled.yml)
 
 # ACCESS-NRI Fork of Modular Ocean Model version 5 (MOM5)
 
