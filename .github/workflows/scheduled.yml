@@ -9,10 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      scheduled_ref: ${{ steps.get-scheduled-ref.outputs.scheduled_ref }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: access-esm1.5
 
       - name: Set up matrix
         id: set-matrix
@@ -21,6 +20,11 @@ jobs:
         run: |
           files=$(find .github/build-ci/manifests/scheduled/access-esm1.5 -iname '*.j2' -printf '"%p",')
           echo "matrix=[${files%,}]" >> $GITHUB_OUTPUT
+
+      - name: Get HEAD of access-esm1.5 branch
+        id: get-scheduled-ref
+        run: echo "scheduled_ref=$(git rev-parse origin/access-esm1.5)" >> $GITHUB_OUTPUT
+
   access-esm1p5:
     name: access-esm1.5
     needs: pre-access-esm1p5
@@ -33,6 +37,8 @@ jobs:
     with:
       spack-manifest-path: ${{ matrix.file }}
       spack-manifest-data-path: .github/build-ci/data/standard.json
+      spack-manifest-data-pairs: |
+        scheduled_ref ${{ needs.pre-access-esm1p5.outputs.scheduled_ref }}
       allow-ssh-into-spack-install: false  # If true, PR author must ssh into instance to complete job
       # spack-packages-ref: main
       # spack-config-ref: main
@@ -43,10 +49,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      scheduled_ref: ${{ steps.get-scheduled-ref.outputs.scheduled_ref }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: master
 
       - name: Set up matrix
         id: set-matrix
@@ -55,6 +60,10 @@ jobs:
         run: |
           files=$(find .github/build-ci/manifests/scheduled/master -iname '*.j2' -printf '"%p",')
           echo "matrix=[${files%,}]" >> $GITHUB_OUTPUT
+
+      - name: Get HEAD of master branch
+        id: get-scheduled-ref
+        run: echo "scheduled_ref=$(git rev-parse origin/master)" >> $GITHUB_OUTPUT
   master:
     name: master
     needs: pre-master
@@ -67,6 +76,8 @@ jobs:
     with:
       spack-manifest-path: ${{ matrix.file }}
       spack-manifest-data-path: .github/build-ci/data/standard.json
+      spack-manifest-data-pairs: |
+        scheduled_ref ${{ needs.pre-master.outputs.scheduled_ref }}
       allow-ssh-into-spack-install: false  # If true, PR author must ssh into instance to complete job
       # spack-packages-ref: main
       # spack-config-ref: main
