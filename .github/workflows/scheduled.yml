@@ -12,6 +12,8 @@ jobs:
       scheduled_ref: ${{ steps.get-scheduled-ref.outputs.scheduled_ref }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: 'access-esm1.5'
 
       - name: Set up matrix
         id: set-matrix
