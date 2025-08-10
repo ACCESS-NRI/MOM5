@@ -20,12 +20,12 @@ jobs:
         # Find all relevant files under .github/build-ci/manifests/scheduled/access-esm1.5
         # then output them as a JSON array (minus the last comma)
         run: |
-          files=$(find .github/build-ci/manifests/scheduled/access-esm1.5 -iname '*.j2' -printf '"%p",')
+          files=$(find .github/build-ci/manifests/scheduled -iname '*.j2' -printf '"%p",')
           echo "matrix=[${files%,}]" >> $GITHUB_OUTPUT
 
       - name: Get HEAD of access-esm1.5 branch
         id: get-scheduled-ref
-        run: echo "scheduled_ref=$(git rev-parse origin/access-esm1.5)" >> $GITHUB_OUTPUT
+        run: echo "scheduled_ref=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
   access-esm1p5:
     name: access-esm1.5
@@ -60,12 +60,12 @@ jobs:
         # Find all relevant files under .github/build-ci/manifests/scheduled/master
         # then output them as a JSON array (minus the last comma)
         run: |
-          files=$(find .github/build-ci/manifests/scheduled/master -iname '*.j2' -printf '"%p",')
+          files=$(find .github/build-ci/manifests/scheduled -iname '*.j2' -printf '"%p",')
           echo "matrix=[${files%,}]" >> $GITHUB_OUTPUT
 
       - name: Get HEAD of master branch
         id: get-scheduled-ref
-        run: echo "scheduled_ref=$(git rev-parse origin/master)" >> $GITHUB_OUTPUT
+        run: echo "scheduled_ref=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
   master:
     name: master
     needs: pre-master
