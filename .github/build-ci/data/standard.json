@@ -15,6 +15,6 @@
   "parallelio_version": "2.6.2",
   "openmpi_version": "5.0.5",
   "access_fms_version": "git.mom5-2025.05.000=mom5",
-  "access_generic_tracers_version": "git.2025.07.001=main",
-  "access_mocsy_version": "git.2025.07.002=gtracers"
+  "access_generic_tracers_version": "2025.07.002",
+  "access_mocsy_version": "2025.07.002"
 }
