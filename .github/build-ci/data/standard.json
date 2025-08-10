@@ -9,7 +9,6 @@
   "libaccessom2_version": "git.2025.05.001=access-om2",
   "oasis3_mct_version_om2": "git.2025.03.001=access-om2",
   "oasis3_mct_version_esm1p6": "git.access-esm1.5-2025.03.001=access-esm1.5",
-  "oasis3_mct_version_esm1p5": "git.access-esm1.5_2024.05.24=access-esm1.5",
   "netcdf_c_version": "4.9.2",
   "netcdf_fortran_version": "4.6.1",
   "parallelio_version": "2.6.2",
