@@ -37,7 +37,7 @@ jobs:
         file: ${{ fromJson(needs.pre-access-esm1p5.outputs.matrix) }}
         exclude:
         # TODO: Remove this exclusion once https://github.com/ACCESS-NRI/oasis3-mct/issues/41 is fixed
-        - file: .github/build-ci/manifests/scheduled/gcc_mom_access-esm1.6.spack.yaml.j2
+        - file: .github/build-ci/manifests/scheduled/gcc_mom_access-esm1.5.spack.yaml.j2
     uses: access-nri/build-ci/.github/workflows/ci.yml@v2
     with:
       spack-manifest-path: ${{ matrix.file }}
@@ -76,6 +76,9 @@ jobs:
       max-parallel: 4
       matrix:
         file: ${{ fromJson(needs.pre-master.outputs.matrix) }}
+        exclude:
+        # TODO: Remove this exclusion once https://github.com/ACCESS-NRI/oasis3-mct/issues/41 is fixed
+        - file: .github/build-ci/manifests/scheduled/gcc_mom_access-esm1.6.spack.yaml.j2
     uses: access-nri/build-ci/.github/workflows/ci.yml@v2
     with:
       spack-manifest-path: ${{ matrix.file }}
