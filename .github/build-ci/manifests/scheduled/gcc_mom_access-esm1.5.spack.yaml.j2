@@ -1,19 +1,7 @@
 spack:
   specs:
-  - 'access-esm1p5@latest'
+  - mom5@git.{{ scheduled_ref }}=access-esm1.5
   packages:
-    mom5:
-      require:
-      - '@git.{{ ref }}=access-esm1.5'
-    cice4:
-      require:
-      - '@{{ cice4_version }}'
-    um7:
-      require:
-      - '@{{ um_version }}'
-    gcom4:
-      require:
-      - '@{{ gcom4_version }}'
     oasis3-mct:
       require:
       - '@{{ oasis3_mct_version }}'
@@ -28,7 +16,7 @@ spack:
       - '@{{ openmpi_version }}'
     all:
       require:
-      - '%{{ intel_compiler }} target=x86_64'
+      - '%{{ gcc_compiler }} target=x86_64'
   concretizer:
     unify: false
   view: false
