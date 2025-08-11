@@ -20,12 +20,12 @@ jobs:
         # Find all relevant files under .github/build-ci/manifests/scheduled/access-esm1.5
         # then output them as a JSON array (minus the last comma)
         run: |
-          files=$(find .github/build-ci/manifests/scheduled/access-esm1.5 -iname '*.j2' -printf '"%p",')
+          files=$(find .github/build-ci/manifests/scheduled -iname '*.j2' -printf '"%p",')
           echo "matrix=[${files%,}]" >> $GITHUB_OUTPUT
 
       - name: Get HEAD of access-esm1.5 branch
         id: get-scheduled-ref
-        run: echo "scheduled_ref=$(git rev-parse origin/access-esm1.5)" >> $GITHUB_OUTPUT
+        run: echo "scheduled_ref=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
   access-esm1p5:
     name: access-esm1.5
@@ -35,12 +35,15 @@ jobs:
       max-parallel: 4
       matrix:
         file: ${{ fromJson(needs.pre-access-esm1p5.outputs.matrix) }}
+        exclude:
+        # TODO: Remove this exclusion once https://github.com/ACCESS-NRI/oasis3-mct/issues/41 is fixed
+        - file: .github/build-ci/manifests/scheduled/gcc_mom_access-esm1.5.spack.yaml.j2
+        - file: .github/build-ci/manifests/scheduled/oneapi_mom_access-esm1.5.spack.yaml.j2
     uses: access-nri/build-ci/.github/workflows/ci.yml@v2
     with:
       spack-manifest-path: ${{ matrix.file }}
       spack-manifest-data-path: .github/build-ci/data/standard.json
-      spack-manifest-data-pairs: |-
-        scheduled_ref ${{ needs.pre-access-esm1p5.outputs.scheduled_ref }}
+      ref: ${{ needs.pre-access-esm1p5.outputs.scheduled_ref }}
       allow-ssh-into-spack-install: false  # If true, PR author must ssh into instance to complete job
       # spack-packages-ref: main
       # spack-config-ref: main
@@ -60,12 +63,12 @@ jobs:
         # Find all relevant files under .github/build-ci/manifests/scheduled/master
         # then output them as a JSON array (minus the last comma)
         run: |
-          files=$(find .github/build-ci/manifests/scheduled/master -iname '*.j2' -printf '"%p",')
+          files=$(find .github/build-ci/manifests/scheduled -iname '*.j2' -printf '"%p",')
           echo "matrix=[${files%,}]" >> $GITHUB_OUTPUT
 
       - name: Get HEAD of master branch
         id: get-scheduled-ref
-        run: echo "scheduled_ref=$(git rev-parse origin/master)" >> $GITHUB_OUTPUT
+        run: echo "scheduled_ref=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
   master:
     name: master
     needs: pre-master
@@ -74,12 +77,14 @@ jobs:
       max-parallel: 4
       matrix:
         file: ${{ fromJson(needs.pre-master.outputs.matrix) }}
+        exclude:
+        # TODO: Remove this exclusion once https://github.com/ACCESS-NRI/oasis3-mct/issues/41 is fixed
+        - file: .github/build-ci/manifests/scheduled/gcc_mom_access-esm1.6.spack.yaml.j2
     uses: access-nri/build-ci/.github/workflows/ci.yml@v2
     with:
       spack-manifest-path: ${{ matrix.file }}
       spack-manifest-data-path: .github/build-ci/data/standard.json
-      spack-manifest-data-pairs: |-
-        scheduled_ref ${{ needs.pre-master.outputs.scheduled_ref }}
+      ref: ${{ needs.pre-master.outputs.scheduled_ref }}
       allow-ssh-into-spack-install: false  # If true, PR author must ssh into instance to complete job
       # spack-packages-ref: main
       # spack-config-ref: main

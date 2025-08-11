@@ -1,15 +1,10 @@
 spack:
   specs:
-  - matrix:
-    - ['mom5@git.{{ scheduled_ref }}=access-om2']
-    - ['build_system=cmake', 'build_system=makefile']
+  - 'mom5@git.{{ ref }}=access-esm1.6'
   packages:
-    libaccessom2:
-      require:
-      - '@{{ libaccessom2_version }}'
     oasis3-mct:
       require:
-      - '@{{ oasis3_mct_version_om2 }}'
+      - '@{{ oasis3_mct_version_esm1p6 }}'
     access-fms:
       require:
       - '@{{ access_fms_version }}'
@@ -30,7 +25,7 @@ spack:
       - '@{{ openmpi_version }}'
     all:
       require:
-      - '%{{ gcc_compiler }} target=x86_64'
+      - '%{{ intel_compiler }} target=x86_64'
   concretizer:
     unify: false
   view: false

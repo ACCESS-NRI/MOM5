@@ -1,6 +1,6 @@
 spack:
   specs:
-  - 'mom5@git.{{ scheduled_ref }}=mom_solo'
+  - 'mom5@git.{{ ref }}=mom_solo'
   packages:
     netcdf-c:
       require:
@@ -11,12 +11,9 @@ spack:
     openmpi:
       require:
       - '@{{ openmpi_version }}'
-    gcc-runtime:
-      require:
-      - '%gcc'
     all:
       require:
-      - '%{{ oneapi_compiler }} target=x86_64'
+      - '%{{ intel_compiler }} target=x86_64'
   concretizer:
     unify: false
   view: false

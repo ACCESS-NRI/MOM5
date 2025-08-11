@@ -1,10 +1,7 @@
 spack:
   specs:
-  - mom5@git.{{ scheduled_ref }}=access-esm1.5
+  - 'mom5@git.{{ ref }}=mom_sis'
   packages:
-    oasis3-mct:
-      require:
-      - '@{{ oasis3_mct_version_esm1p5 }}'
     netcdf-c:
       require:
       - '@{{ netcdf_c_version}}'
