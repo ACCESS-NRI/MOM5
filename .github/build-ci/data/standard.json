@@ -1,5 +1,7 @@
 {
   "intel_compiler": "intel@2021.10.0",
+  "gcc_compiler": "gcc@13.2.0",
+  "oneapi_compiler": "oneapi@2025.2.0",
   "cice4_version": "git.access-esm1.5-2025.04.001=access-esm1.5",
   "um_version": "git.2024.10.17=access-esm1.5",
   "gcom4_version": "git.2024.05.28=access-esm1.5",
