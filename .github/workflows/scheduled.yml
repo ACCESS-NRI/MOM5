@@ -42,6 +42,7 @@ jobs:
     with:
       spack-manifest-path: ${{ matrix.file }}
       spack-manifest-data-path: .github/build-ci/data/standard.json
+      ref: ${{ needs.pre-access-esm1p5.outputs.scheduled_ref }}
       spack-manifest-data-pairs: |-
         scheduled_ref ${{ needs.pre-access-esm1p5.outputs.scheduled_ref }}
       allow-ssh-into-spack-install: false  # If true, PR author must ssh into instance to complete job
