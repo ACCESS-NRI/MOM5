@@ -64,7 +64,6 @@ target_sources(ocean_access PRIVATE
   ${SRC_DIR}/mom5/ocean_core/oda_driver.F90
 
   ${SRC_DIR}/mom5/ocean_csiro_bgc/csiro_bgc.F90
-  ${SRC_DIR}/mom5/ocean_csiro_bgc/ocmip2_co2calc.F90
 
   ${SRC_DIR}/mom5/ocean_diag/ocean_adv_vel_diag.F90
   ${SRC_DIR}/mom5/ocean_diag/ocean_diagnostics.F90
