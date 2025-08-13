@@ -96,7 +96,7 @@ use ocean_types_mod, only: ice_ocean_boundary_type, &
 use time_manager_mod, only: time_type
 use gtracer_flux_mod, only: set_coupler_type_data, extract_coupler_type_data
 use coupler_types_mod, only: coupler_2d_bc_type, ind_pcair, ind_u10, ind_psurf, ind_csurf, ind_flux
-use constants_mod, only: WTMCO2, hlv
+use constants_mod, only: WTMCO2
 
 ! Timing
 
@@ -715,7 +715,7 @@ do jf =  1, num_fields_in
      Ice_ocean_boundary%sw_flux_nir_dir(iisc:iiec,jjsc:jjec) =  frac_nir_dir*vwork(iisc:iiec,jjsc:jjec)
      Ice_ocean_boundary%sw_flux_nir_dif(iisc:iiec,jjsc:jjec) =  frac_nir_dif*vwork(iisc:iiec,jjsc:jjec)
   case('q_flux')
-     Ice_ocean_boundary%q_flux(iisc:iiec,jjsc:jjec) =  vwork(iisc:iiec,jjsc:jjec)/hlv
+     Ice_ocean_boundary%q_flux(iisc:iiec,jjsc:jjec) =  vwork(iisc:iiec,jjsc:jjec)
   case('t_flux')
      Ice_ocean_boundary%t_flux(iisc:iiec,jjsc:jjec) =  vwork(iisc:iiec,jjsc:jjec)
   case('lw_flux')
