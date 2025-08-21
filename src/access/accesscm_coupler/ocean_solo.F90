@@ -125,7 +125,7 @@ program main
 !     </PRE>
 !   </NOTE>
 !
-  use constants_mod,            only: constants_init, SECONDS_PER_HOUR
+  use constants_mod,            only: constants_init, SECONDS_PER_HOUR, read_fms_constants
   use data_override_mod,        only: data_override_init, data_override
   use diag_manager_mod,         only: diag_manager_init, diag_manager_end
   use field_manager_mod,        only: field_manager_init
@@ -232,6 +232,7 @@ program main
   endif
 
   call constants_init
+  call read_fms_constants()
 
   flags = MPP_CLOCK_SYNC
 
