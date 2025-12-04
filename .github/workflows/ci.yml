@@ -37,6 +37,6 @@ jobs:
       # builtin-spack-packages-ref: main
       # access-spack-packages-ref: api-v2
       # spack-config-ref: main
-      # spack-ref: releases/v1.0
+      # spack-ref: releases/v1.1
     secrets:
       spack-install-command-pat: ${{ secrets.SPACK_INSTALL_COMMAND_PAT }}
