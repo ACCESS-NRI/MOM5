@@ -11,17 +11,17 @@ spack:
       - 'nxglob=360 nyglob=300 blckx=30 blcky=300 mxblcks=1' # grid size and block size
     um7:
       require:
-      - '@{{ um_version_esm1p6 }}'
+      - '@{{ um_version }}'
     cable:
       require:
-      - '@{{ cable_version_esm1p6 }}'
+      - '@{{ cable_version }}'
       - library=access-esm1.6
     gcom4:
       require:
       - '@{{ gcom4_version }}'
     oasis3-mct:
       require:
-      - '@{{ oasis3_mct_version }}'
+      - '@{{ oasis3_mct_version_esm1p6 }}'
     access-fms:
       require:
       - '@{{ access_fms_version }}'
