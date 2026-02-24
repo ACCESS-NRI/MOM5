@@ -1,17 +1,24 @@
 spack:
   specs:
-  - 'access-om2@latest'
+  - 'access-esm1p6@latest cice=5'
   packages:
     mom5:
       require:
-      - '@git.{{ ref }}=access-om2'
+      - '@git.{{ ref }}=access-esm1.6'
     cice5:
       require:
       - '@{{ cice5_version }}'
-      - 'io_type=PIO build_system=cmake'
-    libaccessom2:
+      - 'nxglob=360 nyglob=300 blckx=30 blcky=300 mxblcks=1' # grid size and block size
+    um7:
       require:
-      - '@{{ libaccessom2_version }}'
+      - '@{{ um_version_esm1p6 }}'
+    cable:
+      require:
+      - '@{{ cable_version_esm1p6 }}'
+      - library=access-esm1.6
+    gcom4:
+      require:
+      - '@{{ gcom4_version }}'
     oasis3-mct:
       require:
       - '@{{ oasis3_mct_version }}'
@@ -30,15 +37,12 @@ spack:
     netcdf-fortran:
       require:
       - '@{{ netcdf_fortran_version }}'
-    parallelio:
-      require:
-      - '@{{ parallelio_version }}'
     openmpi:
       require:
       - '@{{ openmpi_version }}'
     all:
       require:
-      - '%{{ intel_compiler }} target=x86_64'
+      - '%{{ gcc_compiler }} target=x86_64'
   concretizer:
     unify: false
   view: false

@@ -7,13 +7,14 @@ spack:
       - '@git.{{ ref }}=access-om2'
     cice5:
       require:
-      - '@{{ cice5_version_om2 }}'
+      - '@{{ cice5_version }}'
+      - 'io_type=PIO build_system=cmake'
     libaccessom2:
       require:
       - '@{{ libaccessom2_version }}'
     oasis3-mct:
       require:
-      - '@{{ oasis3_mct_version_om2 }}'
+      - '@{{ oasis3_mct_version }}'
     access-fms:
       require:
       - '@{{ access_fms_version }}'
