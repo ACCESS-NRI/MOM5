@@ -9,6 +9,7 @@ spack:
       require:
       - '@{{ cice5_version }}'
       - 'io_type=PIO build_system=cmake'
+      - 'nxglob=360 nyglob=300 blckx=15 blcky=300 mxblcks=1' # grid size and block size
     libaccessom2:
       require:
       - '@{{ libaccessom2_version }}'
