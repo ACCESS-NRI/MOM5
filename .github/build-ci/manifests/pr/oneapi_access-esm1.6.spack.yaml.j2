@@ -7,10 +7,15 @@ spack:
       - '@git.{{ ref }}=access-esm1.6'
     cice5:
       require:
-      - '@{{ cice5_version_esm1p6 }}'
+      - '@{{ cice5_version }}'
+      - 'nxglob=360 nyglob=300 blckx=30 blcky=300 mxblcks=1' # grid size and block size
     um7:
       require:
-      - '@{{ um_version_esm1p6 }}'
+      - '@{{ um_version }}'
+    cable:
+      require:
+      - '@{{ cable_version }}'
+      - library=access-esm1.6
     gcom4:
       require:
       - '@{{ gcom4_version }}'
@@ -35,9 +40,12 @@ spack:
     openmpi:
       require:
       - '@{{ openmpi_version }}'
+    gcc-runtime:
+      require:
+      - '%gcc'
     all:
       require:
-      - '%{{ intel_compiler }} target=x86_64'
+      - '%{{ oneapi_compiler }} target=x86_64'
   concretizer:
     unify: false
   view: false

@@ -39,7 +39,7 @@ spack:
       - '@{{ openmpi_version }}'
     all:
       require:
-      - '%{{ intel_compiler }} target=x86_64'
+      - '%{{ gcc_compiler }} target=x86_64'
   concretizer:
     unify: false
   view: false
