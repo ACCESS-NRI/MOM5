@@ -14,9 +14,13 @@ spack:
     gcc-runtime:
       require:
       - '%gcc'
+    intel-oneapi-compilers-classic:
+      require:
+      - '@{{ oneapi_compiler_version }}'
     all:
       require:
-      - '%{{ oneapi_compiler }} target=x86_64'
+      - '%access_oneapi'
+      - 'target=x86_64'
   concretizer:
     unify: false
   view: false
