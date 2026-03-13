@@ -9,7 +9,6 @@ spack:
       require:
       - '@{{ cice5_version }}'
       - 'io_type=PIO build_system=cmake'
-      - 'nxglob=360 nyglob=300 blckx=15 blcky=300 mxblcks=1' # grid size and block size
     libaccessom2:
       require:
       - '@{{ libaccessom2_version }}'
@@ -37,9 +36,13 @@ spack:
     openmpi:
       require:
       - '@{{ openmpi_version }}'
+    gcc:
+      require:
+      - '@{{ gcc_compiler_version }}'
     all:
       require:
-      - '%{{ gcc_compiler }} target=x86_64'
+      - '%access_gcc'
+      - 'target=x86_64'
   concretizer:
     unify: false
   view: false

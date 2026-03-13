@@ -1,12 +1,12 @@
 {
-  "intel_compiler": "intel@2021.10.0",
-  "gcc_compiler": "gcc@13.2.0",
-  "oneapi_compiler": "oneapi@2025.2.0",
+  "intel_compiler_version": "2021.10.0",
+  "gcc_compiler_version": "13.2.0",
+  "oneapi_compiler_version": "2025.2.0",
   "cice5_version": "2026.01.000",
   "um_version": "git.2026.02.000=access-esm1.6",
   "cable_version": "2025.11.000",
   "gcom4_version": "git.2025.08.000=access-esm1.5",
-  "libaccessom2_version": "git.2025.05.001=access-om2",
+  "libaccessom2_version": "git.2026.02.000=access-om2",
   "oasis3_mct_version_esm1p6": "5.2",
   "oasis3_mct_version_om2": "git.2025.03.001=stable",
   "netcdf_c_version": "4.9.2",
@@ -14,6 +14,6 @@
   "parallelio_version": "2.6.8",
   "openmpi_version": "5.0.8",
   "access_fms_version": "git.mom5-2025.08.000=mom5",
-  "access_generic_tracers_version": "2026.01.000",
+  "access_generic_tracers_version": "2026.02.000",
   "access_mocsy_version": "2025.07.002"
 }
