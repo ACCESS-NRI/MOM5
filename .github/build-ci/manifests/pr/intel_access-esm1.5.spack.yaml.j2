@@ -26,9 +26,13 @@ spack:
     openmpi:
       require:
       - '@{{ openmpi_version }}'
+    intel-oneapi-compilers-classic:
+      require:
+      - '@{{ intel_compiler_version }}'
     all:
       require:
-      - '%{{ intel_compiler }} target=x86_64'
+      - '%access_intel'
+      - 'target=x86_64'
   concretizer:
     unify: false
   view: false

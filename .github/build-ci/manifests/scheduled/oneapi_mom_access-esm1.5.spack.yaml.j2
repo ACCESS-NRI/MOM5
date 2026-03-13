@@ -14,12 +14,13 @@ spack:
     openmpi:
       require:
       - '@{{ openmpi_version }}'
-    gcc-runtime:
+    intel-oneapi-compilers-classic:
       require:
-      - '%gcc'
+      - '@{{ oneapi_compiler_version }}'
     all:
       require:
-      - '%{{ oneapi_compiler }} target=x86_64'
+      - '%access_oneapi'
+      - 'target=x86_64'
   concretizer:
     unify: false
   view: false
