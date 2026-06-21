@@ -1604,7 +1604,7 @@ subroutine ocean_model_init(Ocean, Ocean_state, Time_init, Time_in, &
 
        ! compute "flux adjustments" (e.g., surface tracer restoring, flux correction)
        call mpp_clock_begin(id_flux_adjust)
-       call flux_adjust(Time, T_diag(1:num_diag_tracers), Dens, Ext_mode, &
+       call flux_adjust(Time, T_diag(1:num_diag_tracers), Dens, Thickness, Ext_mode, &
                         T_prog(1:num_prog_tracers), Velocity, river, melt, pme)
 
        call mpp_clock_end(id_flux_adjust)
@@ -1718,7 +1718,7 @@ subroutine ocean_model_init(Ocean, Ocean_state, Time_init, Time_in, &
        ! smoother is not needed for C-grid.  
        if(vert_coordinate_class==DEPTH_BASED) then 
           call mpp_clock_begin(id_surface_smooth)
-          call ocean_eta_smooth(Time, Thickness, Ext_mode, T_prog(1:num_prog_tracers))
+          call ocean_eta_smooth(Time, Thickness, Dens, Ext_mode, T_prog(1:num_prog_tracers))
           call mpp_clock_end(id_surface_smooth)
        endif
 
@@ -1879,7 +1879,7 @@ subroutine ocean_model_init(Ocean, Ocean_state, Time_init, Time_in, &
        ! diagnose time=taup1 ocean free surface height or bottom pressure.
        ! also diagnose geodepth_zt and geodepth_zwt.
        call mpp_clock_begin(id_eta_and_pbot_diagnose)
-       call eta_and_pbot_diagnose(Time, Dens, Thickness, patm, pme, river, Ext_mode, Lagrangian_system, use_blobs)
+       call eta_and_pbot_diagnose(Time, Dens, Thickness, T_prog, patm, pme, river, Ext_mode, Lagrangian_system, use_blobs)
        call mpp_clock_end(id_eta_and_pbot_diagnose)
 
        ! diagnose the geodepth of new blobs and the depth of old blobs

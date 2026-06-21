@@ -351,6 +351,8 @@ public calc_mixed_layer_depth
 public calc_potrho_mixed_layer 
 public send_tracer_variance
 public diagnose_eta_tend_3dflux
+public compute_budget_mld
+public compute_tracer_at_mlb
 
 private compute_subduction 
 private compute_tracer_mld
@@ -694,8 +696,6 @@ ierr = check_nml_error(io_status,'ocean_tracer_diag_nml')
         'Vertically integrated tracer [sum(rho_dzt*tracer)] in mixed layer for '//trim(T_prog(n)%name),&
         'kg/m^2 * '//trim(T_prog(n)%units), missing_value=missing_value, range=(/-1.e20,1.e20/))
        if(id_tracer_mld(n) > 0) compute_tracer_mld_diags = .true.
-
-
     enddo
 
     id_kappa_sort = register_diag_field ('ocean_model','kappa_sort', &
@@ -1072,7 +1072,7 @@ subroutine calc_mixed_layer_depth(Thickness, salinity, theta, rho, pressure, &
   real, dimension(isd:,jsd:),   intent(inout) :: hmxl
   logical, optional,            intent(in)    :: smooth_mld_input
 
-  real, parameter :: epsln=1.0e-20  ! for divisions 
+  real, parameter :: epsln=1.0e-20  ! for divisions
   integer         :: i, j, k, km1, kb
   logical         :: smooth_mld_routine 
 
@@ -1672,7 +1672,6 @@ subroutine compute_tracer_mld(Time, Thickness, Dens, T_prog, salinity, theta)
   integer :: i,j,k,kp1,n
   integer :: taup1
   real, dimension(isd:ied,jsd:jed) :: mld
-
   
   if (.not.module_is_initialized) then 
     call mpp_error(FATAL, &
@@ -1755,7 +1754,214 @@ subroutine compute_tracer_mld(Time, Thickness, Dens, T_prog, salinity, theta)
 end subroutine compute_tracer_mld
 ! </SUBROUTINE>  NAME="compute_tracer_mld"
 
+!#######################################################################
+! <SUBROUTINE NAME="compute_budget_mld">
+!
+! <DESCRIPTION>
+!
+! Compute the MLD-average of a 3D tracer tendency field.
+!
+! A per-layer weight wrk1(i,j,k) in [0,1] is built so that the weighted
+! sum over k equals the depth-integrated tendency within the mixed layer.
+! Three cases handle where the MLD falls relative to the layer interfaces
+! (depth_zwt):
+!   1. MLD shallower than bottom of layer 1: partial weight for k=1 only.
+!   2. MLD within layer k (k>1): full weight for layers above, partial
+!      weight for the straddling layer (fraction of dzt spanned by MLD).
+!   3. MLD deeper than all model levels: full weight everywhere.
+! The depth-weighted column sum is then divided by the MLD to give a
+! depth-averaged tendency.
+!
+! Ryan.Holmes, September 2024
+! </DESCRIPTION>
+!
+subroutine compute_budget_mld(Time, Thickness, Dens, T_prog, tendency, tendency_2d)
 
+  type(ocean_time_type),        intent(in)    :: Time
+  type(ocean_thickness_type),   intent(in)    :: Thickness
+  type(ocean_density_type),     intent(in)    :: Dens
+  type(ocean_prog_tracer_type), intent(in)    :: T_prog(:)
+  real, dimension(isd:,jsd:,:), intent(in)    :: tendency    ! 3D tendency field (any units/m)
+  real, dimension(isd:,jsd:),   intent(inout) :: tendency_2d ! MLD-averaged tendency (same units)
+
+  integer :: i,j,k,kp1,n
+  integer :: tau
+  real, dimension(isd:ied,jsd:jed) :: mld
+  real, parameter :: epsln=1.0e-20  ! guard against division by zero at land points
+
+  if (.not.module_is_initialized) then
+    call mpp_error(FATAL, &
+    '==>Error from ocean_tracer_diag_mod (compute_budget_mld): module needs initialization')
+  endif
+
+  tau = Time%tau
+
+  call calc_mixed_layer_depth(Thickness,                    &
+          T_prog(index_salt)%field(isd:ied,jsd:jed,:,tau), &
+          T_prog(index_temp)%field(isd:ied,jsd:jed,:,tau), &
+          Dens%rho(isd:ied,jsd:jed,:,tau),                 &
+          Dens%pressure_at_depth(isd:ied,jsd:jed,:),       &
+          mld(:,:), smooth_mld_input=.false.)
+
+  ! Build the per-layer fractional weight wrk1(i,j,k).
+  ! Case 1: MLD is shallower than the bottom of the first layer.
+  wrk1(:,:,:) = 0.0
+  k=1
+  do j=jsc,jec
+     do i=isc,iec
+        if(Grd%tmask(i,j,k)==1.0) then
+            if(Thickness%depth_zwt(i,j,k) >= mld(i,j)) then
+                wrk1(i,j,1)    = mld(i,j)/Thickness%depth_zwt(i,j,k)
+                wrk1(i,j,2:nk) = 0.0
+            endif
+        endif
+     enddo
+  enddo
+
+  ! Case 2: MLD straddles a layer interface at depth k (k>1).
+  ! Layers above are fully included; the straddling layer gets a partial weight.
+  do j=jsc,jec
+     do i=isc,iec
+        kloopA: do k=2,nk
+           if(Grd%tmask(i,j,k)==1.0) then
+               if(Thickness%depth_zwt(i,j,k)   >= mld(i,j) .and. &
+                  Thickness%depth_zwt(i,j,k-1) <  mld(i,j)) then
+                   kp1 = min(k+1,nk)
+                   wrk1(i,j,1:k-1)  = 1.0
+                   wrk1(i,j,k)      = (mld(i,j)-Thickness%depth_zwt(i,j,k-1))/Thickness%dzt(i,j,k)
+                   wrk1(i,j,kp1:nk) = 0.0
+                   exit kloopA
+               endif
+           endif
+        enddo kloopA
+     enddo
+  enddo
+
+  ! Case 3: MLD is deeper than all model levels — include the full column.
+  k=nk
+  do j=jsc,jec
+     do i=isc,iec
+        if(Grd%tmask(i,j,k)==1.0) then
+            if(Thickness%depth_zwt(i,j,k) <= mld(i,j)) then
+                wrk1(i,j,:) = 1.0
+            endif
+        endif
+     enddo
+  enddo
+
+  ! Depth-weighted column sum, then divide by MLD to get depth-average.
+  wrk1_2d(:,:) = 0.0
+  do k=1,nk
+     do j=jsc,jec
+        do i=isc,iec
+           wrk1_2d(i,j) = wrk1_2d(i,j) + wrk1(i,j,k)*tendency(i,j,k)
+        enddo
+     enddo
+  enddo
+  tendency_2d(:,:) = 0.0
+  do j=jsc,jec
+      do i=isc,iec
+         if (Grd%tmask(i,j,1)==1.0) then
+            tendency_2d(i,j) = wrk1_2d(i,j)/(mld(i,j) + epsln)
+         endif
+      enddo
+  enddo
+
+end subroutine compute_budget_mld
+! </SUBROUTINE>  NAME="compute_budget_mld"
+
+!#######################################################################
+! <SUBROUTINE NAME="compute_tracer_at_mlb">
+!
+! <DESCRIPTION>
+!
+! Return the tracer value at the base of the mixed layer by linear
+! interpolation between the depth cell centres (depth_zt) that bracket
+! the MLD.  Three edge cases are handled:
+!   1. MLD shallower than the first cell centre: use the surface value.
+!   2. MLD between cell centres k and k+1: distance-weighted interpolation
+!      (W1 = distance above MLD from k, W2 = distance below MLD from k+1;
+!       value = (tracer_k * W2 + tracer_k+1 * W1) / (W1+W2)).
+!   3. MLD deeper than the deepest wet cell: use the bottom value.
+! Also returns the MLD itself via mld_out for downstream diagnostics.
+!
+! Ryan.Holmes, November 2025
+! </DESCRIPTION>
+!
+subroutine compute_tracer_at_mlb(Time, Thickness, Dens, T_prog, tracer, tracer_at_mlb, mld_out)
+
+  type(ocean_time_type),        intent(in)    :: Time
+  type(ocean_thickness_type),   intent(in)    :: Thickness
+  type(ocean_density_type),     intent(in)    :: Dens
+  type(ocean_prog_tracer_type), intent(in)    :: T_prog(:)
+  real, dimension(isd:,jsd:,:), intent(in)    :: tracer        ! 3D tracer field
+  real, dimension(isd:,jsd:),   intent(inout) :: tracer_at_mlb ! tracer interpolated to MLD base
+  real, dimension(isd:,jsd:),   intent(inout) :: mld_out       ! MLD (m), passed out for callers
+
+  integer :: i,j,k,kmt
+  integer :: tau
+  real    :: W1, W2, denominator_r
+  real, dimension(isd:ied,jsd:jed) :: mld
+  real, parameter :: epsln=1.0e-20  ! guard against zero-thickness layers
+
+  if (.not.module_is_initialized) then
+    call mpp_error(FATAL, &
+    '==>Error from ocean_tracer_diag_mod (compute_tracer_at_mlb): module needs initialization')
+  endif
+
+  tau = Time%tau
+
+  call calc_mixed_layer_depth(Thickness,                    &
+          T_prog(index_salt)%field(isd:ied,jsd:jed,:,tau), &
+          T_prog(index_temp)%field(isd:ied,jsd:jed,:,tau), &
+          Dens%rho(isd:ied,jsd:jed,:,tau),                 &
+          Dens%pressure_at_depth(isd:ied,jsd:jed,:),       &
+          mld(:,:), smooth_mld_input=.false.)
+
+  tracer_at_mlb(:,:) = 0.0
+  mld_out(:,:) = mld(:,:)
+
+  ! Case 1: MLD shallower than first cell centre — use surface value.
+  do j=jsc,jec
+     do i=isc,iec
+        if(mld(i,j) <= Thickness%depth_zt(i,j,1)) then
+           tracer_at_mlb(i,j) = tracer(i,j,1)
+        endif
+     enddo
+  enddo
+
+  ! Case 2: MLD between cell centres k and k+1 — linear interpolation.
+  ! W1 = distance from cell k to MLD; W2 = distance from MLD to cell k+1.
+  do j=jsc,jec
+     do i=isc,iec
+kloop:  do k=1,nk-1
+           if(Thickness%depth_zt(i,j,k) < mld(i,j) .and. mld(i,j) <= Thickness%depth_zt(i,j,k+1)) then
+              if(Grd%tmask(i,j,k+1) > 0) then
+                 W1 = mld(i,j) - Thickness%depth_zt(i,j,k)
+                 W2 = Thickness%depth_zt(i,j,k+1) - mld(i,j)
+                 denominator_r = 1.0/(W1 + W2 + epsln)
+                 tracer_at_mlb(i,j) = (tracer(i,j,k)*W2 + tracer(i,j,k+1)*W1)*denominator_r
+                 exit kloop
+              endif
+           endif
+        enddo kloop
+     enddo
+  enddo
+
+  ! Case 3: MLD deeper than the deepest wet cell — use the bottom value.
+  do j=jsc,jec
+     do i=isc,iec
+        kmt = Grd%kmt(i,j)
+        if(kmt > 0) then
+           if(mld(i,j) > Thickness%depth_zt(i,j,kmt)) then
+              tracer_at_mlb(i,j) = tracer(i,j,kmt)
+           endif
+        endif
+     enddo
+  enddo
+
+end subroutine compute_tracer_at_mlb
+! </SUBROUTINE>  NAME="compute_tracer_at_mlb"
 
 !#######################################################################
 ! <SUBROUTINE NAME="tracer_change">
