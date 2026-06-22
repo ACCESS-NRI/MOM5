@@ -4535,11 +4535,7 @@ end subroutine get_ocean_sbc
 ! </DESCRIPTION>
 !
 
-<<<<<<< HEAD
-subroutine flux_adjust(Time, T_diag, Dens, Ext_mode, T_prog, Velocity, river, melt, pme, runoff)
-=======
-subroutine flux_adjust(Time, T_diag, Dens, Thickness, Ext_mode, T_prog, Velocity, river, melt, pme)
->>>>>>> 12f398be (Add online mixed-layer tracer budget diagnostics)
+subroutine flux_adjust(Time, T_diag, Dens, Thickness, Ext_mode, T_prog, Velocity, river, melt, pme, runoff)
 #if defined(ACCESS_CM) || defined(ACCESS_OM)
 
   use auscom_ice_parameters_mod, only : use_ioaice, aice_cutoff
