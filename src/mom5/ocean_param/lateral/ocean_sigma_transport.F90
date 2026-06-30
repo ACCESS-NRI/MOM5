@@ -208,6 +208,7 @@ use ocean_types_mod,       only: ocean_prog_tracer_type, ocean_adv_vel_type
 use ocean_types_mod,       only: ocean_options_type, ocean_thickness_type, ocean_density_type
 use ocean_util_mod,        only: write_timestamp, diagnose_2d, diagnose_3d, diagnose_sum, write_chksum_2d
 use ocean_tracer_util_mod, only: diagnose_3d_rho
+use ocean_tracer_diag_mod, only: compute_budget_mld
 use ocean_workspace_mod,   only: wrk1, wrk2, wrk3, wrk4, wrk5, wrk6
 
 implicit none
@@ -237,8 +238,9 @@ integer, dimension(:), allocatable  :: id_sigma_diff_2d ! thickness and density 
                                                         ! for tracer from sigma diffusion within sigma layer 
 integer, dimension(:), allocatable  :: id_sigma_adv_2d  ! thickness and density weighted time tendency 
                                                         ! for tracer from sigma advection within sigma layer 
-integer, dimension(:), allocatable  :: id_sigma_smooth  ! thickness and density weighted time tendency 
+integer, dimension(:), allocatable  :: id_sigma_smooth  ! thickness and density weighted time tendency
                                                         ! for tracer from smoothing of the sigma thickness
+integer, dimension(:), allocatable  :: id_sigma_diff_in_mld ! sigma-diffusion tendency averaged in mixed layer
 integer, dimension(:), allocatable  :: id_sigma_diff_xflux       ! for i-flux from sigma diffusion
 integer, dimension(:), allocatable  :: id_sigma_diff_yflux       ! for j-flux from sigma diffusion
 integer, dimension(:), allocatable  :: id_sigma_diff_xflux_int_z ! for i-flux integrated in z
@@ -758,12 +760,14 @@ ierr = check_nml_error(io_status,'ocean_sigma_transport_nml')
   allocate (id_sigma_diff_2d(num_prog_tracers))
   allocate (id_sigma_adv_2d(num_prog_tracers))
   allocate (id_sigma_smooth(num_prog_tracers))
+  allocate (id_sigma_diff_in_mld(num_prog_tracers))
   id_tracer_sigma  = -1
   id_sigma_diff    = -1
   id_sigma_adv     = -1
   id_sigma_diff_2d = -1
   id_sigma_adv_2d  = -1
   id_sigma_smooth  = -1
+  id_sigma_diff_in_mld = -1
  
   do n=1,num_prog_tracers
 
@@ -793,7 +797,11 @@ ierr = check_nml_error(io_status,'ocean_sigma_transport_nml')
                            Grd%tracer_axes(1:2), Time%model_time,                                        &
                            'thk wghtd sigma-smoothing heating in sigma layer', 'Watts/m^2',              &
                            missing_value=missing_value, range=(/-1.e16,1.e16/))
-     else 
+        id_sigma_diff_in_mld(n) = register_diag_field ('ocean_model', trim(T_prog(n)%name)//'_sigma_diff_in_mld', &
+                           Grd%tracer_axes(1:2), Time%model_time,                                                  &
+                           'thk wghtd sigma-diffusion heating averaged in mixed layer', 'Watts/m^3',               &
+                           missing_value=missing_value, range=(/-1.e16,1.e16/))
+     else
         id_sigma_diff(n) = register_diag_field ('ocean_model', trim(T_prog(n)%name)//'_sigma_diff',          &
                            Grd%tracer_axes(1:3), Time%model_time,                                            &
                            'thk wghtd sigma-diffusion on '//trim(T_prog(n)%name), trim(T_prog(n)%flux_units),&
@@ -815,7 +823,11 @@ ierr = check_nml_error(io_status,'ocean_sigma_transport_nml')
                            Grd%tracer_axes(1:2), Time%model_time,                                      &
                            'thk wghtd sigma-smoothing in sigma layer on '//trim(T_prog(n)%name),       &
                            trim(T_prog(n)%flux_units), missing_value=missing_value, range=(/-1.e16,1.e16/))
-     endif 
+        id_sigma_diff_in_mld(n) = register_diag_field ('ocean_model', trim(T_prog(n)%name)//'_sigma_diff_in_mld', &
+                           Grd%tracer_axes(1:2), Time%model_time,                                                  &
+                           'thk wghtd sigma-diffusion in MLD on '//trim(T_prog(n)%name),                          &
+                           trim(T_prog(n)%flux_units)//'/m', missing_value=missing_value, range=(/-1.e16,1.e16/))
+     endif
   enddo
 
 
@@ -995,6 +1007,7 @@ subroutine sigma_transport (Time, Thickness, Dens, T_prog, Adv_vel, bott_blthick
   real, dimension(isd:ied,jsd:jed) :: thickness_sigma_old
   real, dimension(isd:ied,jsd:jed) :: dzt_sigma_tendency
   real, dimension(isd:ied,jsd:jed) :: tmp
+  real, dimension(isd:ied,jsd:jed) :: tendency_in_mld
   real, dimension(2)               :: density_test
 
   real :: depth_sigma
@@ -1468,8 +1481,14 @@ subroutine sigma_transport (Time, Thickness, Dens, T_prog, Adv_vel, bott_blthick
      call diagnose_2d(Time, Grd, id_tracer_sigma(n), tracer_sigma(:,:,n))
 
      ! send tendency to diagnostic manager 
-     if (id_sigma_diff(n) > 0) then 
+     if (id_sigma_diff(n) > 0) then
         call diagnose_3d(Time, Grd, id_sigma_diff(n), T_prog(n)%conversion*wrk2(:,:,:))
+     endif
+     if (id_sigma_diff_in_mld(n) > 0) then
+        wrk5(:,:,:) = wrk1(:,:,:)
+        call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk2(:,:,:), tendency_in_mld(:,:))
+        wrk1(:,:,:) = wrk5(:,:,:)
+        call diagnose_2d(Time, Grd, id_sigma_diff_in_mld(n), tendency_in_mld(:,:)*T_prog(n)%conversion)
      endif
      if (id_sigma_adv(n) > 0) then 
         call diagnose_3d(Time, Grd, id_sigma_adv(n), T_prog(n)%conversion*wrk3(:,:,:))
