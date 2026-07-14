@@ -4101,7 +4101,7 @@ subroutine send_tracer_diagnostics(Time, T_prog, T_diag, Thickness, Dens, use_bl
   do n=1,num_diag_tracers
 
      if(id_diag(n) > 0) then 
-         if(n==index_temp) then 
+         if(n==index_diag_temp) then
              wrk1(:,:,:) = 0.0
              do k=1,nk
                 do j=jsc,jec
@@ -4117,7 +4117,7 @@ subroutine send_tracer_diagnostics(Time, T_prog, T_diag, Thickness, Dens, use_bl
      endif
 
      if (id_diag_surf_tracer(n) > 0) then 
-         if(n==index_temp) then 
+         if(n==index_diag_temp) then
              wrk1_2d(:,:) = 0.0
              do j=jsc,jec
                 do i=isc,iec
@@ -4132,7 +4132,7 @@ subroutine send_tracer_diagnostics(Time, T_prog, T_diag, Thickness, Dens, use_bl
      endif
 
      if (id_diag_surf_tracer_sq(n) > 0) then
-         if(n==index_temp) then 
+         if(n==index_diag_temp) then
              wrk1_2d(:,:) = 0.0
              do j=jsc,jec
                 do i=isc,iec
