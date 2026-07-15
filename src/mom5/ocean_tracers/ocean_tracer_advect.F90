@@ -170,6 +170,7 @@ use ocean_types_mod,       only: ocean_prog_tracer_type, ocean_thickness_type, o
 use ocean_workspace_mod,   only: wrk1, wrk2, wrk3, wrk4, wrk5, wrk1_2d 
 use ocean_util_mod,        only: diagnose_2d, diagnose_3d
 use ocean_tracer_util_mod, only: diagnose_3d_rho
+use ocean_tracer_diag_mod, only: compute_budget_mld
 
 implicit none
 
@@ -374,6 +375,7 @@ integer  :: id_tform_salt_advect
 integer  :: id_tform_salt_advect_on_nrho
 
 integer, dimension(:), allocatable :: id_tracer_advection
+integer, dimension(:), allocatable :: id_tracer_advection_in_mld
 integer, dimension(:), allocatable :: id_tracer_advection_on_nrho
 integer, dimension(:), allocatable :: id_tracer2_advection
 integer, dimension(:), allocatable :: id_tracer_adv_diss
@@ -775,6 +777,7 @@ subroutine advection_diag_init (Time, Dens, T_prog)
   stdoutunit=stdout()
 
   allocate (id_tracer_advection(num_prog_tracers))
+  allocate (id_tracer_advection_in_mld(num_prog_tracers))
   allocate (id_tracer_advection_on_nrho(num_prog_tracers))
   allocate (id_tracer2_advection(num_prog_tracers))
   allocate (id_tracer_adv_diss(num_prog_tracers))
@@ -792,6 +795,7 @@ subroutine advection_diag_init (Time, Dens, T_prog)
   allocate (id_yflux_adv_int_z(num_prog_tracers))
 
   id_tracer_advection =-1
+  id_tracer_advection_in_mld =-1
   id_tracer_advection_on_nrho =-1
   id_tracer2_advection=-1
   id_tracer_adv_diss  =-1
@@ -814,6 +818,9 @@ subroutine advection_diag_init (Time, Dens, T_prog)
       id_tracer_advection(n) = register_diag_field ('ocean_model', trim(T_prog(n)%name)//'_advection', &
                    Grd%tracer_axes(1:3), Time%model_time, 'cp*rho*dzt*advection tendency',             &
                    trim(T_prog(n)%flux_units), missing_value=missing_value, range=(/-1.e18,1.e18/))
+      id_tracer_advection_in_mld(n) = register_diag_field ('ocean_model', trim(T_prog(n)%name)//'_advection_in_mld', &
+                   Grd%tracer_axes(1:2), Time%model_time, 'cp*rho*dzt/mld*advection tendency averaged in mixed layer',   &
+                   trim(T_prog(n)%flux_units)//'/m', missing_value=missing_value, range=(/-1.e18,1.e18/))
       id_tracer_advection_on_nrho(n) = register_diag_field ('ocean_model', trim(T_prog(n)%name)//'_advection_on_nrho', &
                    Dens%neutralrho_axes(1:3), Time%model_time, 'cp*rho*dzt*advection tendency binned to neutral density',&
                    trim(T_prog(n)%flux_units), missing_value=missing_value, range=(/-1.e18,1.e18/))
@@ -872,6 +879,9 @@ subroutine advection_diag_init (Time, Dens, T_prog)
       id_tracer_advection(n) = register_diag_field ('ocean_model', trim(T_prog(n)%name)//'_advection', &
                    Grd%tracer_axes(1:3), Time%model_time, 'rho*dzt*advection tendency',         &
                    'kg/(sec*m^2)', missing_value=missing_value, range=(/-1.e18,1.e18/))
+      id_tracer_advection_in_mld(n) = register_diag_field ('ocean_model', trim(T_prog(n)%name)//'_advection_in_mld', &
+                   Grd%tracer_axes(1:2), Time%model_time, 'rho*dzt/mld*advection tendency averaged in mixed layer',  &
+                   'kg/(sec*m^3)', missing_value=missing_value, range=(/-1.e18,1.e18/))
       id_tracer_advection_on_nrho(n) = register_diag_field ('ocean_model', trim(T_prog(n)%name)//'_advection_on_nrho', &
                    Dens%neutralrho_axes(1:3), Time%model_time, 'rho*dzt*advection tendency binned to neutral density',&
                    'kg/(sec*m^2)', missing_value=missing_value, range=(/-1.e18,1.e18/))
@@ -2105,6 +2115,7 @@ subroutine vert_advect_tracer(Time, Adv_vel, Dens, Thickness, T_prog, Tracer, nt
 
   integer :: tau, taum1
   integer :: i,j,k
+  real,dimension(isd:ied,jsd:jed)             :: tendency_in_mld
 
   if(zero_tracer_advect_vert) return 
 
@@ -2178,6 +2189,10 @@ subroutine vert_advect_tracer(Time, Adv_vel, Dens, Thickness, T_prog, Tracer, nt
 
       if(id_tracer_advection(ntracer) > 0) then 
          call diagnose_3d(Time, Grd, id_tracer_advection(ntracer), Tracer%conversion*advect_tendency(:,:,:))
+      endif
+      if(id_tracer_advection_in_mld(ntracer) > 0) then
+         call compute_budget_mld(Time, Thickness, Dens, T_prog, advect_tendency(:,:,:), tendency_in_mld(:,:))
+         call diagnose_2d(Time, Grd, id_tracer_advection_in_mld(ntracer), Tracer%conversion*tendency_in_mld(:,:))
       endif
       if(id_tracer_advection_on_nrho(ntracer) > 0) then
          call diagnose_3d_rho(Time, Dens, id_tracer_advection_on_nrho(ntracer), Tracer%conversion*advect_tendency)
