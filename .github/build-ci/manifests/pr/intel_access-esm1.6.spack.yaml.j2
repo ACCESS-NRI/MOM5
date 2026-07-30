@@ -4,7 +4,8 @@ spack:
   packages:
     mom5:
       require:
-      - '@git.{{ ref }}=access-esm1.6'
+      - '@git.{{ ref }}=stable'
+      - 'model=access-esm1.6'
     cice5:
       require:
       - '@{{ cice5_version }}'
