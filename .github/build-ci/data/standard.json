@@ -5,7 +5,7 @@
   "cice5_version": "2026.01.000",
   "um7_version": "2026.02.000",
   "cable_version": "2025.11.000",
-  "gcom4_version": "git.2025.08.000=access-esm1.5",
+  "gcom4_version": "2025.08.000",
   "libaccessom2_version": "2026.02.000",
   "oasis3_mct_version_esm1p6": "5.2",
   "oasis3_mct_version_om2": "2025.03.001",
