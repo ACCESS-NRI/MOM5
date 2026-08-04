@@ -14,13 +14,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up matrix
-        id: set-matrix
+      - name: Get PR manifests
+        id: get-pr-manifests
         # Find all relevant files under .github/build-ci/manifests/pr/<base_ref>
-        # then output them as a JSON array (minus the last comma)
         run: |
           files=$(find .github/build-ci/manifests/pr -iname '*.j2' -printf '"%p",')
-          echo "matrix=[${files%,}]" >> $GITHUB_OUTPUT
+          echo "list=${files%,}" >> $GITHUB_OUTPUT
+
+      - name: Get changed scheduled manifests
+        id: get-scheduled-manifests-changed
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96  # v47.0.6
+        with:
+          files: '.github/build-ci/manifests/scheduled/*.j2'
+          separator: ','
+
+      - name: Set up matrix
+        id: set-matrix
+        run: |
+          pr_manifests='${{ steps.get-pr-manifests.outputs.list }}'
+          changed_scheduled_manifests='${{ steps.get-scheduled-manifests-changed.outputs.all_changed_files }}'
+
+          if [[ "${{ steps.get-scheduled-manifests-changed.outputs.all_changed_files_count }}" == "0" ]]; then
+            echo "matrix=[${pr_manifests}]" >> $GITHUB_OUTPUT
+          else
+            echo "matrix=[${pr_manifests},${changed_scheduled_manifests}]" >> $GITHUB_OUTPUT
+          fi
+
   ci:
     name: CI
     needs: pre-ci
