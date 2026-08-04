@@ -16,29 +16,30 @@ jobs:
 
       - name: Get PR manifests
         id: get-pr-manifests
-        # Find all relevant files under .github/build-ci/manifests/pr/<base_ref>
+        # Find all relevant files under .github/build-ci/manifests/pr
+        # then quote the newline separated input via jq, so that each element can be slurped into a json array
         run: |
-          files=$(find .github/build-ci/manifests/pr -iname '*.j2' -printf '"%p",')
-          echo "list=${files%,}" >> $GITHUB_OUTPUT
+          files=$(find .github/build-ci/manifests/pr -type f -iname '*.j2' -printf %p | jq --raw-input | jq --slurp --compact-output)
+          echo "matrix=${files}" >> $GITHUB_OUTPUT
 
       - name: Get changed scheduled manifests
         id: get-scheduled-manifests-changed
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96  # v47.0.6
         with:
           files: '.github/build-ci/manifests/scheduled/*.j2'
-          separator: ','
+          matrix: true
 
       - name: Set up matrix
         id: set-matrix
         run: |
-          pr_manifests='${{ steps.get-pr-manifests.outputs.list }}'
-          changed_scheduled_manifests='${{ steps.get-scheduled-manifests-changed.outputs.all_changed_files }}'
-
           if [[ "${{ steps.get-scheduled-manifests-changed.outputs.all_changed_files_count }}" == "0" ]]; then
-            echo "matrix=[${pr_manifests}]" >> $GITHUB_OUTPUT
+            matrix="${{ steps.get-pr-manifests.outputs.matrix }}"
           else
-            echo "matrix=[${pr_manifests},${changed_scheduled_manifests}]" >> $GITHUB_OUTPUT
+            matrix=$(jq --compact-output --null-input --argjson a '${{ steps.get-pr-manifests.outputs.matrix }}' --argjson b '${{ steps.get-scheduled-manifests-changed.outputs.all_changed_files }}' '$a + $b')
           fi
+
+          echo "$matrix"
+          echo "matrix=${matrix}" >> $GITHUB_OUTPUT
 
   ci:
     name: CI
