@@ -1,6 +1,6 @@
 spack:
   specs:
-  - 'mom5@git.{{ ref }}=legacy-access-om2-bgc'
+  - 'mom5@git.{{ ref }}=stable model=access-om2-legacy-bgc'
   packages:
     libaccessom2:
       require:
@@ -26,12 +26,12 @@ spack:
     openmpi:
       require:
       - '@{{ openmpi_version }}'
-    intel-oneapi-compilers:
+    gcc:
       require:
-      - '@{{ oneapi_compiler_version }}'
+      - '@{{ gcc_compiler_version }}'
     all:
       require:
-      - '%access_oneapi'
+      - '%access_gcc'
       - 'target=x86_64'
   concretizer:
     unify: false

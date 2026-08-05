@@ -4,14 +4,15 @@ spack:
   packages:
     mom5:
       require:
-      - '@git.{{ ref }}=access-esm1.6'
+      - '@git.{{ ref }}=stable'
+      - 'model=access-esm1.6'
     cice5:
       require:
       - '@{{ cice5_version }}'
       - 'nxglob=360 nyglob=300 blckx=30 blcky=300 mxblcks=1' # grid size and block size
     um7:
       require:
-      - '@{{ um_version }}'
+      - '@{{ um7_version }}'
     cable:
       require:
       - '@{{ cable_version }}'
