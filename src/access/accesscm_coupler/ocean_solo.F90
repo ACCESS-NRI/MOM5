@@ -161,7 +161,7 @@ program main
   implicit none
 
   type (ocean_public_type)               :: Ocean_sfc          
-  type (ocean_state_type),       pointer :: Ocean_state
+  type (ocean_state_type),       pointer :: Ocean_state => null()
   type(ice_ocean_boundary_type), target  :: Ice_ocean_boundary
   type(coupler_2d_bc_type),      target  :: Atm_fields
 
