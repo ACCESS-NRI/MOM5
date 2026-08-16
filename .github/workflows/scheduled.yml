@@ -41,6 +41,7 @@ jobs:
         - file: .github/build-ci/manifests/scheduled/oneapi_mom_access-esm1.5.spack.yaml.j2
     uses: access-nri/build-ci/.github/workflows/ci.yml@v3
     with:
+      spack-manifest-repository-ref: access-esm1.5
       spack-manifest-path: ${{ matrix.file }}
       spack-manifest-data-path: .github/build-ci/data/standard.json
       ref: ${{ needs.pre-access-esm1p5.outputs.scheduled_ref }}
