@@ -46,6 +46,7 @@ jobs:
       spack-manifest-data-path: .github/build-ci/data/standard.json
       ref: ${{ needs.pre-access-esm1p5.outputs.scheduled_ref }}
       allow-ssh-into-spack-install: false  # If true, PR author must ssh into instance to complete job
+      access-spack-packages-ref: 2026.07.013  # The @access-esm1.5 version for manifests is only available < 2026.08.000, so we are pinned here
       # Default args (including explicit spack/spack-packages/spack-config versions)
       # are specified in https://github.com/ACCESS-NRI/build-ci/tree/v3/.github/workflows#inputs
 
