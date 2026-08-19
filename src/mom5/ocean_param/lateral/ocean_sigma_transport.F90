@@ -1486,7 +1486,8 @@ subroutine sigma_transport (Time, Thickness, Dens, T_prog, Adv_vel, bott_blthick
      endif
      if (id_sigma_diff_in_mld(n) > 0) then
         wrk5(:,:,:) = wrk1(:,:,:)
-        call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk2(:,:,:), tendency_in_mld(:,:))
+        wrk6(:,:,:) = wrk2(:,:,:)  ! compute_budget_mld calls calc_mixed_layer_depth which clobbers wrk1 and wrk2
+        call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk6(:,:,:), tendency_in_mld(:,:))
         wrk1(:,:,:) = wrk5(:,:,:)
         call diagnose_2d(Time, Grd, id_sigma_diff_in_mld(n), tendency_in_mld(:,:)*T_prog(n)%conversion)
      endif
