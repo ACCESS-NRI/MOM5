@@ -533,6 +533,7 @@ use ocean_types_mod,          only: ocean_public_type
 use ocean_workspace_mod,      only: wrk1_2d, wrk2_2d, wrk3_2d, wrk1
 use ocean_util_mod,           only: diagnose_2d, diagnose_2d_u, diagnose_3d_u, diagnose_sum
 use ocean_tracer_util_mod,    only: diagnose_3d_rho
+use ocean_tracer_diag_mod,    only: compute_budget_mld
 
 #if defined(CSIRO_BGC)
 use csiro_bgc_mod,            only: csiro_bgc_virtual_fluxes, do_csiro_bgc,ind_no3,ind_phy
@@ -592,6 +593,8 @@ integer, allocatable, dimension(:) :: id_stf_runoff
 integer, allocatable, dimension(:) :: id_stf_calving
 integer, allocatable, dimension(:) :: id_stf_pme
 integer, allocatable, dimension(:) :: id_stf_pme_on_nrho
+integer, allocatable, dimension(:) :: id_stf_pme_in_mld
+integer, allocatable, dimension(:) :: id_pme_river_times_tracer_in_mld
 integer, allocatable, dimension(:) :: id_stf_prec
 integer, allocatable, dimension(:) :: id_stf_evap
 integer, allocatable, dimension(:) :: id_trunoff
@@ -625,6 +628,7 @@ integer :: id_vstoke          =-1
 integer :: id_wavlen          =-1
 
 integer :: id_net_sfc_heating       =-1
+integer :: id_net_sfc_heating_in_mld =-1
 integer :: id_total_net_sfc_heating =-1
 
 integer :: id_net_sfc_workq       =-1
@@ -641,13 +645,17 @@ integer :: id_tau_curl       =-1
 integer :: id_ekman_we       =-1
 integer :: id_ekman_heat     =-1
 integer :: id_swflx          =-1
+integer :: id_swflx_in_mld   =-1
 integer :: id_swflx_vis      =-1
 
 integer :: id_lw_heat            =-1
 integer :: id_sens_heat          =-1
+integer :: id_lw_heat_in_mld     =-1
+integer :: id_sens_heat_in_mld   =-1
 integer :: id_fprec_melt_heat    =-1
 integer :: id_calving_melt_heat  =-1
 integer :: id_evap_heat          =-1
+integer :: id_evap_heat_in_mld   =-1
 
 integer :: id_fprec          =-1
 integer :: id_lprec          =-1
@@ -664,6 +672,7 @@ integer :: id_melt           =-1
 integer :: id_evap           =-1
 integer :: id_pme_sbc        =-1
 integer :: id_pme_river      =-1
+integer :: id_pme_river_in_mld =-1
 integer :: id_pme_restore    =-1
 integer :: id_pme_eta_restore=-1
 integer :: id_pme_correct    =-1
@@ -1667,6 +1676,8 @@ subroutine ocean_sbc_diag_init(Time, Dens, T_prog)
   allocate( id_stf_calving           (num_prog_tracers) )
   allocate( id_stf_pme               (num_prog_tracers) )
   allocate( id_stf_pme_on_nrho       (num_prog_tracers) )
+  allocate( id_stf_pme_in_mld        (num_prog_tracers) )
+  allocate( id_pme_river_times_tracer_in_mld        (num_prog_tracers) )
   allocate( id_stf_prec              (num_prog_tracers) )
   allocate( id_stf_evap              (num_prog_tracers) )
   allocate( id_trunoff               (num_prog_tracers) )
@@ -1691,6 +1702,8 @@ subroutine ocean_sbc_diag_init(Time, Dens, T_prog)
   id_stf_calving           (:)  = -1
   id_stf_pme               (:)  = -1
   id_stf_pme_on_nrho       (:)  = -1
+  id_stf_pme_in_mld        (:)  = -1
+  id_pme_river_times_tracer_in_mld (:) = -1
   id_stf_prec              (:)  = -1
   id_stf_evap              (:)  = -1
   id_trunoff               (:)  = -1
@@ -1866,6 +1879,11 @@ subroutine ocean_sbc_diag_init(Time, Dens, T_prog)
        '(kg/m^3)*(m/sec)', missing_value=missing_value,range=(/-1e6,1e6/),                     &
        standard_name='water_flux_into_sea_water')
 
+  id_pme_river_in_mld= register_diag_field('ocean_model','pme_river_in_mld', Grd%tracer_axes(1:2),           &
+       Time%model_time, 'mass flux of precip-evap+river via sbc (liquid, frozen, evaporation) averaged in mixed layer',&
+       '(kg/m^3)*(m/sec)/m', missing_value=missing_value,range=(/-1e6,1e6/),                     &
+       standard_name='water_flux_into_sea_water')
+
   id_net_sfc_workemp = register_diag_field('ocean_model','net_sfc_workEmP',                        &
         Grd%tracer_axes(1:2),                                                               &
         Time%model_time, 'pme_river*g*beta2*So/rho0, beta uses pot_rho rather than neut',    &
@@ -1951,6 +1969,22 @@ subroutine ocean_sbc_diag_init(Time, Dens, T_prog)
        Time%model_time, 'sensible heat into ocean (<0 cools ocean)', 'W/m^2' ,      &
        missing_value=missing_value,range=(/-1.e10,1.e10/),                          &
        standard_name='surface_downward_sensible_heat_flux')   
+
+  id_swflx_in_mld = register_diag_field('ocean_model','swflx_in_mld', Grd%tracer_axes(1:2),  &
+       Time%model_time, 'shortwave flux into ocean (>0 heats ocean) averaged in mixed layer', 'W/m^3', &
+       missing_value=missing_value,range=(/-1.e10,1.e10/))
+
+  id_evap_heat_in_mld = register_diag_field('ocean_model','evap_heat_in_mld', Grd%tracer_axes(1:2),&
+       Time%model_time, 'latent heat flux into ocean (<0 cools ocean) averaged in mixed layer', 'W/m^3',     &
+       missing_value=missing_value,range=(/-1e10,1e10/))
+
+  id_lw_heat_in_mld = register_diag_field('ocean_model','lw_heat_in_mld', Grd%tracer_axes(1:2),&
+       Time%model_time, 'longwave flux into ocean (<0 cools ocean) averaged in mixed layer', 'W/m^3' ,  &
+       missing_value=missing_value,range=(/-1.e10,1.e10/))
+
+  id_sens_heat_in_mld = register_diag_field('ocean_model','sens_heat_in_mld', Grd%tracer_axes(1:2),&
+       Time%model_time, 'sensible heat into ocean (<0 cools ocean) averaged in mixed layer', 'W/m^3' ,      &
+       missing_value=missing_value,range=(/-1.e10,1.e10/))
 
   id_fprec_melt_heat = register_diag_field('ocean_model','fprec_melt_heat', Grd%tracer_axes(1:2),&
        Time%model_time, 'heat flux to melt frozen precip (<0 cools ocean)', 'W/m^2' , &
@@ -2396,6 +2430,11 @@ subroutine ocean_sbc_diag_init(Time, Dens, T_prog)
               Time%model_time, 'surface ocean heat flux coming through coupler and mass transfer',&
               'Watts/m^2' ,                                                                       &
               missing_value=missing_value,range=(/-1.e4,1.e4/))
+         id_net_sfc_heating_in_mld = register_diag_field('ocean_model','net_sfc_heating_in_mld',  &
+              Grd%tracer_axes(1:2),                                                               &
+              Time%model_time, 'surface ocean heat flux coming through coupler and mass transfer averaged in mixed layer',&
+              'Watts/m^3' ,                                                                       &
+              missing_value=missing_value,range=(/-1.e4,1.e4/))
          id_net_sfc_workq = register_diag_field('ocean_model','net_sfc_workq',                        &
               Grd%tracer_axes(1:2),                                                               &
               Time%model_time, 'net_sfc_heat*g*alpha2/Cp/rho0, alpha uses pot_rho rather than neut',    &
@@ -2421,6 +2460,14 @@ subroutine ocean_sbc_diag_init(Time, Dens, T_prog)
               Dens%neutralrho_axes(1:3),                                                                      &
               Time%model_time, 'heat flux (relative to 0C) from pme transfer of water across ocean surface binned to neutral density', &
               'Watts/m^2' , missing_value=missing_value,range=(/-1.e20,1.e20/))
+         id_stf_pme_in_mld(n) = register_diag_field('ocean_model','sfc_hflux_pme_in_mld',                    &
+              Grd%tracer_axes(1:2),                                                                          &
+              Time%model_time, 'heat flux (relative to 0C) from pme transfer of water across ocean surface averaged in mixed layer', &
+              'Watts/m^3' , missing_value=missing_value,range=(/-1.e4,1.e4/))
+         id_pme_river_times_tracer_in_mld(n) = register_diag_field('ocean_model','pme_river_times_temp_in_mld',                    &
+              Grd%tracer_axes(1:2),                                                                          &
+              Time%model_time, 'mass flux of precip-evap+river via sbc (liquid, frozen, evaporation) averaged in mixed layer times mixed layer temperature',&
+              '(kg/m^3)*(m/sec) '//trim(T_prog(n)%units)//' / m', missing_value=missing_value,range=(/-1e6,1e6/))
          id_stf_prec(n) = register_diag_field('ocean_model','sfc_hflux_from_water_prec',      &
               Grd%tracer_axes(1:2),                                                           &
               Time%model_time, 'heat flux from precip transfer of water across ocean surface',&
@@ -2542,6 +2589,21 @@ subroutine ocean_sbc_diag_init(Time, Dens, T_prog)
               Time%model_time, trim(name),                 &
               'kg/(m^2*sec)' ,                             &
               missing_value=missing_value,range=(/-1.e20,1.e20/))
+         name = 'sfc_'//trim(T_prog(n)%name)//'_flux_pme_in_mld'
+         id_stf_pme_in_mld(n) = register_diag_field('ocean_model',&
+              trim(name),                                  &
+              Grd%tracer_axes(1:2),                        &
+              Time%model_time, trim(name),                 &
+              'kg/(m^3*sec)' ,                             &
+              missing_value=missing_value,range=(/-1.e4,1.e4/))
+         name = 'pme_river_times_'//trim(T_prog(n)%name)//'_in_mld'
+         id_pme_river_times_tracer_in_mld(n) = register_diag_field('ocean_model',&
+              trim(name),                                   &
+              Grd%tracer_axes(1:2),                         &
+              Time%model_time,                              &
+              'mass flx of precip-evap+river via sbc (liquid, frozen, evaporation) averaged in mixed layer times mixed layer salinity',&
+              '(kg/m^3)*(m/sec) '//trim(T_prog(n)%units)//' / m',&
+              missing_value=missing_value,range=(/-1e6,1e6/))
          name = 'sfc_'//trim(T_prog(n)%name)//'_flux_prec'
          id_stf_prec(n) = register_diag_field('ocean_model',&
               trim(name),                                   & 
@@ -2669,6 +2731,13 @@ subroutine ocean_sbc_diag_init(Time, Dens, T_prog)
               Time%model_time, trim(name),                 &
               'kg/(m^2*sec)' ,                             &
               missing_value=missing_value,range=(/-1.e4,1.e4/))  
+         name = 'sfc_'//trim(T_prog(n)%name)//'_flux_pme_in_mld'
+         id_stf_pme_in_mld(n) = register_diag_field('ocean_model',&
+              trim(name),                                  &
+              Grd%tracer_axes(1:2),                        &
+              Time%model_time, trim(name),                 &
+              'kg/(m^3*sec)' ,                             &
+              missing_value=missing_value,range=(/-1.e4,1.e4/))
          name = 'sfc_'//trim(T_prog(n)%name)//'_flux_pme_on_nrho'
          id_stf_pme_on_nrho(n) = register_diag_field('ocean_model',&
               trim(name),                                  &
@@ -4451,22 +4520,22 @@ end subroutine get_ocean_sbc
 ! <SUBROUTINE NAME="flux_adjust">
 !
 ! <DESCRIPTION>
-! Subroutine to compute the surface fluxes derived from a 
-! restoring condition and/or correction from an input file. 
+! Subroutine to compute the surface fluxes derived from a
+! restoring condition and/or correction from an input file.
 !
-! We use a convention whereby a positive 
-! flux enters the ocean:  (+) down convention. 
+! We use a convention whereby a positive
+! flux enters the ocean:  (+) down convention.
 !
 ! When restoring salinity, one may choose to convert this
 ! flux to an implied water flux, or keep it a salt flux.
 ! Converting to a water flux will alter the sea level, and
-! so alter the concentration of other tracers.  
-! The default is to keep it as a salt flux. 
+! so alter the concentration of other tracers.
+! The default is to keep it as a salt flux.
 !
 ! </DESCRIPTION>
 !
 
-subroutine flux_adjust(Time, T_diag, Dens, Ext_mode, T_prog, Velocity, river, melt, pme, runoff)
+subroutine flux_adjust(Time, T_diag, Dens, Thickness, Ext_mode, T_prog, Velocity, river, melt, pme, runoff)
 #if defined(ACCESS_CM) || defined(ACCESS_OM)
 
   use auscom_ice_parameters_mod, only : use_ioaice, aice_cutoff
@@ -4476,6 +4545,7 @@ subroutine flux_adjust(Time, T_diag, Dens, Ext_mode, T_prog, Velocity, river, me
   type(ocean_time_type),          intent(in)    :: Time
   type(ocean_diag_tracer_type),   intent(in)    :: T_diag(:)
   type(ocean_density_type),       intent(in)    :: Dens
+  type(ocean_thickness_type),     intent(in)    :: Thickness
   type(ocean_external_mode_type), intent(in)    :: Ext_mode
   type(ocean_prog_tracer_type),   intent(inout) :: T_prog(:)
   type(ocean_velocity_type),      intent(inout) :: Velocity
@@ -4501,6 +4571,11 @@ subroutine flux_adjust(Time, T_diag, Dens, Ext_mode, T_prog, Velocity, river, me
   logical                          :: used
   logical                          :: ice_present
   real                             :: active_cells, smftu, smftv
+
+  real, dimension(isd:ied,jsd:jed) :: tendency_in_mld
+  real, dimension(isd:ied,jsd:jed,1:nk) :: tendency_3d
+  real, dimension(isd:ied,jsd:jed) :: tracer_in_mld
+  real, dimension(isd:ied,jsd:jed,1:nk) :: tracer
 
 #if defined(ACCESS_CM)
   ! Changed in CM2. Make parameter to isolate change
@@ -4840,6 +4915,55 @@ subroutine flux_adjust(Time, T_diag, Dens, Ext_mode, T_prog, Velocity, river, me
   if (id_stf_pme(index_temp) > 0) then
      call diagnose_2d(Time, Grd, id_stf_pme(index_temp),       &
              pme(:,:)*T_prog(index_temp)%tpme(:,:)*T_prog(index_temp)%conversion)
+  endif
+  ! heat input from net pme relative to 0 degrees C (W/m2) averaged in mixed layer
+  if (id_stf_pme_in_mld(index_temp) > 0) then
+      tendency_in_mld(:,:) = 0.0
+      tendency_3d(:,:,:) = 0.0
+      tendency_3d(:,:,1) = pme(:,:)*T_prog(index_temp)%tpme(:,:)
+      call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
+      call diagnose_2d(Time, Grd, id_stf_pme_in_mld(index_temp), tendency_in_mld(:,:)*T_prog(index_temp)%conversion)
+  endif
+  ! pme_river times mixed layer temperature in mixed layer
+  if (id_pme_river_times_tracer_in_mld(index_temp) > 0) then
+      wrk1(:,:,:) = 0.0
+      do k=1,nk
+         do j=jsc,jec
+            do i=isc,iec
+               wrk1(i,j,k) = T_prog(index_temp)%field(i,j,k,tau)*Thickness%rho_dzt(i,j,k,tau)
+            enddo
+         enddo
+      enddo
+      tracer(:,:,:) = wrk1(:,:,:)
+      tracer_in_mld(:,:) = 0.0
+      call compute_budget_mld(Time, Thickness, Dens, T_prog, tracer(:,:,:), tracer_in_mld(:,:))
+
+      tendency_in_mld(:,:) = 0.0
+      tendency_3d(:,:,:) = 0.0
+      tendency_3d(:,:,1) = pme(:,:) + river(:,:)
+      tendency_3d(:,:,1) = tendency_3d(:,:,1)*tracer_in_mld(:,:)*rho0r
+      call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
+      call diagnose_2d(Time, Grd, id_pme_river_times_tracer_in_mld(index_temp), tendency_in_mld(:,:))
+  endif
+  ! pme_river times mixed layer salinity in mixed layer
+  if (id_pme_river_times_tracer_in_mld(index_salt) > 0) then
+      wrk1(:,:,:) = 0.0
+      do k=1,nk
+         do j=jsc,jec
+            do i=isc,iec
+               wrk1(i,j,k) = T_prog(index_salt)%field(i,j,k,tau)*Thickness%rho_dzt(i,j,k,tau)
+            enddo
+         enddo
+      enddo
+      tracer(:,:,:) = wrk1(:,:,:)
+      call compute_budget_mld(Time, Thickness, Dens, T_prog, tracer(:,:,:), tracer_in_mld(:,:))
+
+      tendency_in_mld(:,:) = 0.0
+      tendency_3d(:,:,:) = 0.0
+      tendency_3d(:,:,1) = pme(:,:) + river(:,:)
+      tendency_3d(:,:,1) = tendency_3d(:,:,1)*tracer_in_mld(:,:)*rho0r
+      call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
+      call diagnose_2d(Time, Grd, id_pme_river_times_tracer_in_mld(index_salt), tendency_in_mld(:,:))
   endif
   ! heat input from net pme relative to 0 degrees C (W/m2) binned to
   ! neutral density
@@ -5271,8 +5395,10 @@ subroutine ocean_sbc_diag(Time, Velocity, Thickness, Dens, T_prog, Ice_ocean_bou
   real, dimension(isd:,jsd:),     intent(in) :: swflx_vis
 
   real, dimension(isd:ied,jsd:jed) :: tmp_flux
+  real, dimension(isd:ied,jsd:jed) :: tendency_in_mld
+  real, dimension(isd:ied,jsd:jed,1:nk) :: tendency_3d
 
-  integer :: i,j,k 
+  integer :: i,j,k
   integer :: ii, jj
   integer :: tau
   real    :: total_stuff 
@@ -5616,7 +5742,7 @@ subroutine ocean_sbc_diag(Time, Velocity, Thickness, Dens, T_prog, Ice_ocean_bou
   ! the frozen precip is typically best approximated to be at 0C, rather than SST. But
   ! we diagnose the contribution in this manner in order to agree with the prognostic model
   ! methods.  
-  if(id_net_sfc_heating > 0) then 
+  if(id_net_sfc_heating > 0 .or. id_net_sfc_heating_in_mld > 0) then
       wrk1_2d(:,:) = 0.0
       do j=jsc,jec
          do i=isc,iec
@@ -5633,10 +5759,19 @@ subroutine ocean_sbc_diag(Time, Velocity, Thickness, Dens, T_prog, Ice_ocean_bou
                    )*T_prog(index_temp)%tpme(i,j))
          enddo
       enddo
-      call diagnose_2d(Time, Grd, id_net_sfc_heating, wrk1_2d(:,:))
+      if (id_net_sfc_heating > 0) then
+         call diagnose_2d(Time, Grd, id_net_sfc_heating, wrk1_2d(:,:))
+      endif
+      if (id_net_sfc_heating_in_mld > 0) then
+         tendency_in_mld(:,:) = 0.0
+         tendency_3d(:,:,:) = 0.0
+         tendency_3d(:,:,1) = wrk1_2d(:,:)
+         call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
+         call diagnose_2d(Time, Grd, id_net_sfc_heating_in_mld, tendency_in_mld(:,:))
+      endif
   endif
-  
-  ! net_surface_heating*g*alphasfc2/rho0/Cp  
+
+  ! net_surface_heating*g*alphasfc2/rho0/Cp
   if(id_net_sfc_workq > 0) then 
       wrk1_2d(:,:) = 0.0
       do j=jsc,jec
@@ -5681,9 +5816,17 @@ subroutine ocean_sbc_diag(Time, Velocity, Thickness, Dens, T_prog, Ice_ocean_bou
 
   ! shortwave flux (W/m2)
   call diagnose_2d(Time, Grd, id_swflx, swflx(:,:))
+  if (id_swflx_in_mld > 0) then
+      tendency_in_mld(:,:) = 0.0
+      tendency_3d(:,:,:) = 0.0
+      tendency_3d(:,:,1) = swflx(:,:)
+      call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
+      call diagnose_2d(Time, Grd, id_swflx_in_mld, tendency_in_mld(:,:))
+  endif
+
   ! total shortwave heat transport (Watts)
   call diagnose_sum(Time, Grd, Dom, id_total_ocean_swflx, swflx, 1e-15)
-  ! swflx impacts on water mass transformation in neutral density classes 
+  ! swflx impacts on water mass transformation in neutral density classes
   if(id_tform_rho_pbl_sw_on_nrho > 0) then
       wrk1(:,:,:) = 0.0
       k=1
@@ -5703,7 +5846,7 @@ subroutine ocean_sbc_diag(Time, Velocity, Thickness, Dens, T_prog, Ice_ocean_bou
 
 
   ! evaporative heat flux (W/m2) (<0 cools ocean)
-  if (id_evap_heat > 0) then
+  if (id_evap_heat > 0 .or. id_evap_heat_in_mld > 0) then
       tmp_flux=0.0
       do j=jsc_bnd,jec_bnd
          do i=isc_bnd,iec_bnd
@@ -5712,9 +5855,18 @@ subroutine ocean_sbc_diag(Time, Velocity, Thickness, Dens, T_prog, Ice_ocean_bou
             tmp_flux(ii,jj) = -latent_heat_vapor(ii,jj)*Ice_ocean_boundary%q_flux(i,j)
          enddo
       enddo
-      call diagnose_2d(Time, Grd, id_evap_heat, tmp_flux(:,:))
+      if (id_evap_heat > 0) then
+          call diagnose_2d(Time, Grd, id_evap_heat, tmp_flux(:,:))
+      endif
+      if (id_evap_heat_in_mld > 0) then
+          tendency_in_mld(:,:) = 0.0
+          tendency_3d(:,:,:) = 0.0
+          tendency_3d(:,:,1) = tmp_flux(:,:)
+          call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
+          call diagnose_2d(Time, Grd, id_evap_heat_in_mld, tendency_in_mld(:,:))
+      endif
   endif
-  ! total evaporative heating (Watts) 
+  ! total evaporative heating (Watts)
   if (id_total_ocean_evap_heat > 0) then
       tmp_flux=0.0
       do j=jsc_bnd,jec_bnd
@@ -5744,9 +5896,17 @@ subroutine ocean_sbc_diag(Time, Velocity, Thickness, Dens, T_prog, Ice_ocean_bou
 
   ! longwave heat flux (W/m2)
   call diagnose_2d(Time, Grd, id_lw_heat, longwave(:,:))
-  ! total longwave heating (Watts) 
+  if (id_lw_heat_in_mld > 0) then
+      tendency_in_mld(:,:) = 0.0
+      tendency_3d(:,:,:) = 0.0
+      tendency_3d(:,:,1) = longwave(:,:)
+      call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
+      call diagnose_2d(Time, Grd, id_lw_heat_in_mld, tendency_in_mld(:,:))
+  endif
+
+  ! total longwave heating (Watts)
   call diagnose_sum(Time, Grd, Dom, id_total_ocean_lw_heat, longwave, 1e-15)
-  ! longwave impacts on water mass transformation in neutral density classes 
+  ! longwave impacts on water mass transformation in neutral density classes
   if(id_tform_rho_pbl_lw_on_nrho > 0) then
       wrk1(:,:,:)      = 0.0
       k=1
@@ -5794,9 +5954,17 @@ subroutine ocean_sbc_diag(Time, Velocity, Thickness, Dens, T_prog, Ice_ocean_bou
 
   ! sensible heat flux (W/m2)
   call diagnose_2d(Time, Grd, id_sens_heat, sensible(:,:))
-  ! total sensible heat transport (Watts) 
+  if (id_sens_heat_in_mld > 0) then
+      tendency_in_mld(:,:) = 0.0
+      tendency_3d(:,:,:) = 0.0
+      tendency_3d(:,:,1) = sensible(:,:)
+      call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
+      call diagnose_2d(Time, Grd, id_sens_heat_in_mld, tendency_in_mld(:,:))
+  endif
+
+  ! total sensible heat transport (Watts)
   call diagnose_sum(Time, Grd, Dom, id_total_ocean_sens_heat, sensible, 1e-15)
-  ! sensible heat impacts on water mass transformation in neutral density classes 
+  ! sensible heat impacts on water mass transformation in neutral density classes
   if(id_tform_rho_pbl_sens_on_nrho > 0) then
       wrk1(:,:,:)      = 0.0
       k=1
@@ -5941,12 +6109,21 @@ subroutine ocean_sbc_diag(Time, Velocity, Thickness, Dens, T_prog, Ice_ocean_bou
 
   !--------mass flux related diagnostics-----------------------------
   !
-  ! total mass flux per area from pme and river (kg/(m2*sec))  
+  ! total mass flux per area from pme and river (kg/(m2*sec))
   if (id_pme_river > 0) then
      call diagnose_2d(Time, Grd, id_pme_river, pme(:,:) + river(:,:))
   endif
-  
-  !ape work from E-P+R: pme_river*g*betasfc2*So/rho0  
+
+  ! total mass flux per area from pme and river (kg/(m2*sec))
+  if (id_pme_river_in_mld > 0) then
+     tendency_in_mld(:,:) = 0.0
+     tendency_3d(:,:,:) = 0.0
+     tendency_3d(:,:,1) = pme(:,:) + river(:,:)
+     call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
+     call diagnose_2d(Time, Grd, id_pme_river_in_mld, tendency_in_mld(:,:))
+  endif
+
+  !ape work from E-P+R: pme_river*g*betasfc2*So/rho0
   if(id_net_sfc_workemp > 0) then
      call diagnose_2d(Time, Grd, id_net_sfc_workemp,        &
         grav*salinity_ref/rho0*betasfc2(:,:)*(pme(:,:) + river(:,:)) )
