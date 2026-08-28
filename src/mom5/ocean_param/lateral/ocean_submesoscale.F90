@@ -2883,7 +2883,7 @@ subroutine compute_submeso_upwind(Thickness, Time, Dens, T_prog)
   real,dimension(isc:iec,jsc:jec) :: ft2
   real,dimension(isc:iec,jsc:jec) :: fe
   real,dimension(isc:iec,jsc:jec) :: fn
-  real,dimension(isc:iec,jsc:jec) :: tendency_in_mld
+  real,dimension(isd:ied,jsd:jed) :: tendency_in_mld
 
   integer  :: i, j, k, n, kp1, kp2
   integer  :: tau, taum1
@@ -3046,7 +3046,7 @@ subroutine compute_submeso_sweby(Thickness, Time, Dens, T_prog)
   real,dimension(isc:iec,jsc:jec) :: ftp
   real,dimension(isc:iec,jsc:jec) :: fbt
   real,dimension(isc:iec,jsc:jec) :: wkm1
-  real,dimension(isc:iec,jsc:jec) :: tendency_in_mld
+  real,dimension(isd:ied,jsd:jed) :: tendency_in_mld
 
   integer  :: i, j, k, n
   integer  :: kp1, kp2, km1
