@@ -938,8 +938,7 @@ subroutine mixdownslope (Time, Thickness, T_prog, Dens, index_temp, index_salt)
             call diagnose_3d_rho(Time, Dens, id_mixdownslope_on_nrho(nt), wrk1)
          endif
          if (id_mixdownslope_in_mld(nt) > 0) then
-            wrk3(:,:,:) = wrk1(:,:,:)  ! compute_budget_mld calls calc_mixed_layer_depth which clobbers wrk1 and wrk2
-            call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk3(:,:,:), tendency_in_mld(:,:))
+            call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk1(:,:,:), tendency_in_mld(:,:))
             call diagnose_2d(Time, Grd, id_mixdownslope_in_mld(nt), tendency_in_mld(:,:))
          endif
      endif
