@@ -157,7 +157,12 @@ integer :: index_temp
 integer :: index_salt
 integer :: index_frazil
 
-! for area of domain 
+! private wrk arrays for calc_mixed_layer_depth/compute_budget_mld because these routines
+! are called in blocks that operate on the public wrk arrays.
+real, dimension(:,:,:), allocatable :: wrk1_mld, wrk2_mld
+real, dimension(:,:),   allocatable :: wrk1_mld_2d
+
+! for area of domain
 real :: cellarea
 real :: cellarea_r
 
@@ -490,6 +495,9 @@ ierr = check_nml_error(io_status,'ocean_tracer_diag_nml')
     allocate(area_t(isd:ied,jsd:jed) )    
     area_t(:,:) = Grd%dat(:,:)*Grd%tmask(:,:,1)
     if(have_obc) area_t(:,:) = area_t(:,:)*Grd%obc_tmask(:,:)
+
+    allocate(wrk1_mld(isd:ied,jsd:jed,nk))
+    allocate(wrk2_mld(isd:ied,jsd:jed,nk))
 
     if(tendency==THREE_LEVEL) then
         write (stdoutunit,'(/a)') &
@@ -1087,15 +1095,15 @@ subroutine calc_mixed_layer_depth(Thickness, salinity, theta, rho, pressure, &
     smooth_mld_routine = smooth_mld
   endif
 
-  hmxl(:,:)   = 0.0
-  wrk1(:,:,:) = 0.0
-  wrk2(:,:,:) = 0.0
+  hmxl(:,:)       = 0.0
+  wrk1_mld(:,:,:) = 0.0
+  wrk2_mld(:,:,:) = 0.0
 
-  wrk1(:,:,:) = density_delta_sfc( rho(:,:,:), salinity(:,:,:), theta(:,:,:), pressure(:,:,:))
+  wrk1_mld(:,:,:) = density_delta_sfc( rho(:,:,:), salinity(:,:,:), theta(:,:,:), pressure(:,:,:))
   do k=2,nk
      do j=jsc,jec
         do i=isc,iec
-           wrk2(i,j,k) = -grav*Grd%tmask(i,j,k)*wrk1(i,j,k-1)/(epsln+rho(i,j,k))
+           wrk2_mld(i,j,k) = -grav*Grd%tmask(i,j,k)*wrk1_mld(i,j,k-1)/(epsln+rho(i,j,k))
         enddo
      enddo
   enddo
@@ -1119,11 +1127,11 @@ subroutine calc_mixed_layer_depth(Thickness, salinity, theta, rho, pressure, &
            if (kb == 0) then
                hmxl(i,j) = 0.0
            else
-               if ( wrk2(i,j,k) >= buoyancy_crit .and. hmxl(i,j)==Thickness%depth_zwt(i,j,kb)) then
-                   hmxl(i,j) = Thickness%depth_zt(i,j,km1)                                &
-                             - (Thickness%depth_zt(i,j,km1) - Thickness%depth_zt(i,j,k))  &
-                             * (buoyancy_crit-wrk2(i,j,km1))                              &
-                             / (wrk2(i,j,k) - wrk2(i,j,km1) + epsln)
+               if ( wrk2_mld(i,j,k) >= buoyancy_crit .and. hmxl(i,j)==Thickness%depth_zwt(i,j,kb)) then
+                   hmxl(i,j) = Thickness%depth_zt(i,j,km1)                                        &
+                             - (Thickness%depth_zt(i,j,km1) - Thickness%depth_zt(i,j,k))          &
+                             * (buoyancy_crit-wrk2_mld(i,j,km1))                                  &
+                             / (wrk2_mld(i,j,k) - wrk2_mld(i,j,km1) + epsln)
                endif
                hmxl(i,j) = hmxl(i,j) * Grd%tmask(i,j,1)
            endif
@@ -1761,7 +1769,7 @@ end subroutine compute_tracer_mld
 !
 ! Compute the MLD-average of a 3D tracer tendency field.
 !
-! A per-layer weight wrk1(i,j,k) in [0,1] is built so that the weighted
+! A per-layer weight wrk1_mld(i,j,k) in [0,1] is built so that the weighted
 ! sum over k equals the depth-integrated tendency within the mixed layer.
 ! Three cases handle where the MLD falls relative to the layer interfaces
 ! (depth_zwt):
@@ -1796,6 +1804,12 @@ subroutine compute_budget_mld(Time, Thickness, Dens, T_prog, tendency, tendency_
 
   tau = Time%tau
 
+  ! wrk1_mld_2d is not allocated in ocean_tracer_diag_init so that it is only allocated here
+  ! if needed.
+  if (.not. allocated(wrk1_mld_2d)) then
+     allocate(wrk1_mld_2d(isd:ied,jsd:jed))
+  endif
+
   call calc_mixed_layer_depth(Thickness,                    &
           T_prog(index_salt)%field(isd:ied,jsd:jed,:,tau), &
           T_prog(index_temp)%field(isd:ied,jsd:jed,:,tau), &
@@ -1803,16 +1817,16 @@ subroutine compute_budget_mld(Time, Thickness, Dens, T_prog, tendency, tendency_
           Dens%pressure_at_depth(isd:ied,jsd:jed,:),       &
           mld(:,:), smooth_mld_input=.false.)
 
-  ! Build the per-layer fractional weight wrk1(i,j,k).
+  ! Build the per-layer fractional weight wrk1_mld(i,j,k).
   ! Case 1: MLD is shallower than the bottom of the first layer.
-  wrk1(:,:,:) = 0.0
+  wrk1_mld(:,:,:) = 0.0
   k=1
   do j=jsc,jec
      do i=isc,iec
         if(Grd%tmask(i,j,k)==1.0) then
             if(Thickness%depth_zwt(i,j,k) >= mld(i,j)) then
-                wrk1(i,j,1)    = mld(i,j)/Thickness%depth_zwt(i,j,k)
-                wrk1(i,j,2:nk) = 0.0
+                wrk1_mld(i,j,1)    = mld(i,j)/Thickness%depth_zwt(i,j,k)
+                wrk1_mld(i,j,2:nk) = 0.0
             endif
         endif
      enddo
@@ -1827,9 +1841,9 @@ subroutine compute_budget_mld(Time, Thickness, Dens, T_prog, tendency, tendency_
                if(Thickness%depth_zwt(i,j,k)   >= mld(i,j) .and. &
                   Thickness%depth_zwt(i,j,k-1) <  mld(i,j)) then
                    kp1 = min(k+1,nk)
-                   wrk1(i,j,1:k-1)  = 1.0
-                   wrk1(i,j,k)      = (mld(i,j)-Thickness%depth_zwt(i,j,k-1))/Thickness%dzt(i,j,k)
-                   wrk1(i,j,kp1:nk) = 0.0
+                   wrk1_mld(i,j,1:k-1)  = 1.0
+                   wrk1_mld(i,j,k)      = (mld(i,j)-Thickness%depth_zwt(i,j,k-1))/Thickness%dzt(i,j,k)
+                   wrk1_mld(i,j,kp1:nk) = 0.0
                    exit kloopA
                endif
            endif
@@ -1843,18 +1857,18 @@ subroutine compute_budget_mld(Time, Thickness, Dens, T_prog, tendency, tendency_
      do i=isc,iec
         if(Grd%tmask(i,j,k)==1.0) then
             if(Thickness%depth_zwt(i,j,k) <= mld(i,j)) then
-                wrk1(i,j,:) = 1.0
+                wrk1_mld(i,j,:) = 1.0
             endif
         endif
      enddo
   enddo
 
   ! Depth-weighted column sum, then divide by MLD to get depth-average.
-  wrk1_2d(:,:) = 0.0
+  wrk1_mld_2d(:,:) = 0.0
   do k=1,nk
      do j=jsc,jec
         do i=isc,iec
-           wrk1_2d(i,j) = wrk1_2d(i,j) + wrk1(i,j,k)*tendency(i,j,k)
+           wrk1_mld_2d(i,j) = wrk1_mld_2d(i,j) + wrk1_mld(i,j,k)*tendency(i,j,k)
         enddo
      enddo
   enddo
@@ -1862,7 +1876,7 @@ subroutine compute_budget_mld(Time, Thickness, Dens, T_prog, tendency, tendency_
   do j=jsc,jec
       do i=isc,iec
          if (Grd%tmask(i,j,1)==1.0) then
-            tendency_2d(i,j) = wrk1_2d(i,j)/(mld(i,j) + epsln)
+            tendency_2d(i,j) = wrk1_mld_2d(i,j)/(mld(i,j) + epsln)
          endif
       enddo
   enddo
