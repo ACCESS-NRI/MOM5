@@ -5395,7 +5395,7 @@ subroutine vert_diffuse_implicit_diag(Time, Thickness, Dens, T_prog, diff_cbt, w
    endif
 
   ! impacts from diff_cbt_conv
-  if(id_vdiffuse_diff_cbt_conv(n) > 0 .or. id_vdiffuse_diff_cbt_in_mld(n) > 0) then
+  if(id_vdiffuse_diff_cbt_conv(n) > 0 .or. id_vdiffuse_diff_cbt_conv_in_mld(n) > 0) then
       wrk1_2d(:,:) = 0.0
       wrk2_2d(:,:) = 0.0
       wrk1(:,:,:)  = 0.0
