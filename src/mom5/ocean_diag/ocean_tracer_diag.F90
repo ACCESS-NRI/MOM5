@@ -1825,7 +1825,7 @@ subroutine compute_budget_mld(Time, Thickness, Dens, T_prog, tendency, tendency_
      do i=isc,iec
         if(Grd%tmask(i,j,k)==1.0) then
             if(Thickness%depth_zwt(i,j,k) >= mld(i,j)) then
-                wrk1_mld(i,j,1)    = mld(i,j)/Thickness%depth_zwt(i,j,k)
+                wrk1_mld(i,j,1)    = mld(i,j)/(Thickness%depth_zwt(i,j,k) + epsln)
                 wrk1_mld(i,j,2:nk) = 0.0
             endif
         endif
@@ -1842,7 +1842,7 @@ subroutine compute_budget_mld(Time, Thickness, Dens, T_prog, tendency, tendency_
                   Thickness%depth_zwt(i,j,k-1) <  mld(i,j)) then
                    kp1 = min(k+1,nk)
                    wrk1_mld(i,j,1:k-1)  = 1.0
-                   wrk1_mld(i,j,k)      = (mld(i,j)-Thickness%depth_zwt(i,j,k-1))/Thickness%dzt(i,j,k)
+                   wrk1_mld(i,j,k)      = (mld(i,j)-Thickness%depth_zwt(i,j,k-1))/(Thickness%dzt(i,j,k) + epsln)
                    wrk1_mld(i,j,kp1:nk) = 0.0
                    exit kloopA
                endif

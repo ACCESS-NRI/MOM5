@@ -218,8 +218,7 @@ contains
 
     id_sw_heat_in_mld = register_diag_field ('ocean_model', 'sw_heat_in_mld',                   &
          Grid%tracer_axes(1:2), Time%model_time, 'penetrative shortwave heating averaged in mixed layer', &
-         'W/m^3', missing_value=-1e10, range=(/-1.e10,1.e10/),                    &
-         standard_name='downwelling_shortwave_flux_in_sea_water')
+         'W/m^3', missing_value=-1e10, range=(/-1.e10,1.e10/))
 
     id_irradiance = register_diag_field ('ocean_model', 'irradiance', &
          Grid%tracer_axes(1:3), Time%model_time, 'irradiance', &
