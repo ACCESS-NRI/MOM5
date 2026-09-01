@@ -1769,7 +1769,7 @@ end subroutine compute_tracer_mld
 !
 ! Compute the MLD-average of a 3D tracer tendency field.
 !
-! A per-layer weight wrk1_mld(i,j,k) in [0,1] is built so that the weighted
+! A per-layer weight wrk1(i,j,k) in [0,1] is built so that the weighted
 ! sum over k equals the depth-integrated tendency within the mixed layer.
 ! Three cases handle where the MLD falls relative to the layer interfaces
 ! (depth_zwt):
@@ -1817,16 +1817,16 @@ subroutine compute_budget_mld(Time, Thickness, Dens, T_prog, tendency, tendency_
           Dens%pressure_at_depth(isd:ied,jsd:jed,:),       &
           mld(:,:), smooth_mld_input=.false.)
 
-  ! Build the per-layer fractional weight wrk1_mld(i,j,k).
+  ! Build the per-layer fractional weight wrk1(i,j,k).
   ! Case 1: MLD is shallower than the bottom of the first layer.
-  wrk1_mld(:,:,:) = 0.0
+  wrk1(:,:,:) = 0.0
   k=1
   do j=jsc,jec
      do i=isc,iec
         if(Grd%tmask(i,j,k)==1.0) then
             if(Thickness%depth_zwt(i,j,k) >= mld(i,j)) then
-                wrk1_mld(i,j,1)    = mld(i,j)/(Thickness%depth_zwt(i,j,k) + epsln)
-                wrk1_mld(i,j,2:nk) = 0.0
+                wrk1(i,j,1)    = mld(i,j)/(Thickness%depth_zwt(i,j,k) + epsln)
+                wrk1(i,j,2:nk) = 0.0
             endif
         endif
      enddo
@@ -1841,9 +1841,9 @@ subroutine compute_budget_mld(Time, Thickness, Dens, T_prog, tendency, tendency_
                if(Thickness%depth_zwt(i,j,k)   >= mld(i,j) .and. &
                   Thickness%depth_zwt(i,j,k-1) <  mld(i,j)) then
                    kp1 = min(k+1,nk)
-                   wrk1_mld(i,j,1:k-1)  = 1.0
-                   wrk1_mld(i,j,k)      = (mld(i,j)-Thickness%depth_zwt(i,j,k-1))/(Thickness%dzt(i,j,k) + epsln)
-                   wrk1_mld(i,j,kp1:nk) = 0.0
+                   wrk1(i,j,1:k-1)  = 1.0
+                   wrk1(i,j,k)      = (mld(i,j)-Thickness%depth_zwt(i,j,k-1))/(Thickness%dzt(i,j,k) + epsln)
+                   wrk1(i,j,kp1:nk) = 0.0
                    exit kloopA
                endif
            endif
@@ -1857,7 +1857,7 @@ subroutine compute_budget_mld(Time, Thickness, Dens, T_prog, tendency, tendency_
      do i=isc,iec
         if(Grd%tmask(i,j,k)==1.0) then
             if(Thickness%depth_zwt(i,j,k) <= mld(i,j)) then
-                wrk1_mld(i,j,:) = 1.0
+                wrk1(i,j,:) = 1.0
             endif
         endif
      enddo
@@ -1868,7 +1868,7 @@ subroutine compute_budget_mld(Time, Thickness, Dens, T_prog, tendency, tendency_
   do k=1,nk
      do j=jsc,jec
         do i=isc,iec
-           wrk1_mld_2d(i,j) = wrk1_mld_2d(i,j) + wrk1_mld(i,j,k)*tendency(i,j,k)
+           wrk1_mld_2d(i,j) = wrk1_mld_2d(i,j) + wrk1(i,j,k)*tendency(i,j,k)
         enddo
      enddo
   enddo
