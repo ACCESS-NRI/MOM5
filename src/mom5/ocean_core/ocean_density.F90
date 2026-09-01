@@ -4573,6 +4573,8 @@ function density_delta_sfc (rho_initial, salinity, theta, press)
 
   real, dimension(isd:ied,jsd:jed,nk) :: density_delta_sfc
   real, dimension(isd:ied,jsd:jed,nk) :: pressure
+  real, dimension(isd:ied,jsd:jed,nk) :: pressure_kp1
+  real, dimension(isd:ied,jsd:jed,nk) :: rho_kp1
   integer :: k
 
   if ( .not. module_is_initialized ) then 
@@ -4587,16 +4589,16 @@ function density_delta_sfc (rho_initial, salinity, theta, press)
   endif 
 
   do k=1,nk-1
-    wrk1(:,:,k) = pressure(:,:,k+1)
+    pressure_kp1(:,:,k) = pressure(:,:,k+1)
   enddo
-  wrk1(:,:,nk) = pressure(:,:,nk)
+  pressure_kp1(:,:,nk) = pressure(:,:,nk)
 
-  wrk2(:,:,:) = density_sfc(salinity, theta, wrk1)
+  rho_kp1(:,:,:) = density_sfc(salinity, theta, pressure_kp1)
 
   do k=1,nk-1
-    density_delta_sfc(:,:,k) = (wrk2(:,:,k) - rho_initial(:,:,k+1))*Grd%tmask(:,:,k+1)
+    density_delta_sfc(:,:,k) = (rho_kp1(:,:,k) - rho_initial(:,:,k+1))*Grd%tmask(:,:,k+1)
   enddo
-  density_delta_sfc(:,:,nk) = (wrk2(:,:,nk) - rho_initial(:,:,nk))*Grd%tmask(:,:,nk)
+  density_delta_sfc(:,:,nk) = (rho_kp1(:,:,nk) - rho_initial(:,:,nk))*Grd%tmask(:,:,nk)
 
 end function density_delta_sfc
 ! </FUNCTION> NAME="density_delta_sfc"
