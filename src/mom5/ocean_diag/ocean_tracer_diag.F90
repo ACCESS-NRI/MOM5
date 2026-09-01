@@ -1120,7 +1120,7 @@ subroutine calc_mixed_layer_depth(Thickness, salinity, theta, rho, pressure, &
   enddo
 
   do k=2,nk
-     km1 = k-1  
+     km1 = k-1
      do j=jsc,jec
         do i=isc,iec
         kb=Grd%kmt(i,j)

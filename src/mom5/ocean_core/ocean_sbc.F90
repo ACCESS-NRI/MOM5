@@ -4573,7 +4573,9 @@ subroutine flux_adjust(Time, T_diag, Dens, Thickness, Ext_mode, T_prog, Velocity
   real                             :: active_cells, smftu, smftv
 
   real, dimension(isd:ied,jsd:jed) :: tendency_in_mld
+  real, dimension(isd:ied,jsd:jed,1:nk) :: tendency_3d
   real, dimension(isd:ied,jsd:jed) :: tracer_in_mld
+  real, dimension(isd:ied,jsd:jed,1:nk) :: tracer
 
 #if defined(ACCESS_CM)
   ! Changed in CM2. Make parameter to isolate change
@@ -4917,9 +4919,9 @@ subroutine flux_adjust(Time, T_diag, Dens, Thickness, Ext_mode, T_prog, Velocity
   ! heat input from net pme relative to 0 degrees C (W/m2) averaged in mixed layer
   if (id_stf_pme_in_mld(index_temp) > 0) then
       tendency_in_mld(:,:) = 0.0
-      wrk1(:,:,:) = 0.0
-      wrk1(:,:,1) = pme(:,:)*T_prog(index_temp)%tpme(:,:)
-      call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk1(:,:,:), tendency_in_mld(:,:))
+      tendency_3d(:,:,:) = 0.0
+      tendency_3d(:,:,1) = pme(:,:)*T_prog(index_temp)%tpme(:,:)
+      call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
       call diagnose_2d(Time, Grd, id_stf_pme_in_mld(index_temp), tendency_in_mld(:,:)*T_prog(index_temp)%conversion)
   endif
   ! pme_river times mixed layer temperature in mixed layer
@@ -4932,14 +4934,15 @@ subroutine flux_adjust(Time, T_diag, Dens, Thickness, Ext_mode, T_prog, Velocity
             enddo
          enddo
       enddo
+      tracer(:,:,:) = wrk1(:,:,:)
       tracer_in_mld(:,:) = 0.0
-      call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk1(:,:,:), tracer_in_mld(:,:))
+      call compute_budget_mld(Time, Thickness, Dens, T_prog, tracer(:,:,:), tracer_in_mld(:,:))
 
       tendency_in_mld(:,:) = 0.0
-      wrk1(:,:,:) = 0.0
-      wrk1(:,:,1) = pme(:,:) + river(:,:)
-      wrk1(:,:,1) = wrk1(:,:,1)*tracer_in_mld(:,:)*rho0r
-      call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk1(:,:,:), tendency_in_mld(:,:))
+      tendency_3d(:,:,:) = 0.0
+      tendency_3d(:,:,1) = pme(:,:) + river(:,:)
+      tendency_3d(:,:,1) = tendency_3d(:,:,1)*tracer_in_mld(:,:)*rho0r
+      call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
       call diagnose_2d(Time, Grd, id_pme_river_times_tracer_in_mld(index_temp), tendency_in_mld(:,:))
   endif
   ! pme_river times mixed layer salinity in mixed layer
@@ -4952,13 +4955,14 @@ subroutine flux_adjust(Time, T_diag, Dens, Thickness, Ext_mode, T_prog, Velocity
             enddo
          enddo
       enddo
-      call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk1(:,:,:), tracer_in_mld(:,:))
+      tracer(:,:,:) = wrk1(:,:,:)
+      call compute_budget_mld(Time, Thickness, Dens, T_prog, tracer(:,:,:), tracer_in_mld(:,:))
 
       tendency_in_mld(:,:) = 0.0
-      wrk1(:,:,:) = 0.0
-      wrk1(:,:,1) = pme(:,:) + river(:,:)
-      wrk1(:,:,1) = wrk1(:,:,1)*tracer_in_mld(:,:)*rho0r
-      call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk1(:,:,:), tendency_in_mld(:,:))
+      tendency_3d(:,:,:) = 0.0
+      tendency_3d(:,:,1) = pme(:,:) + river(:,:)
+      tendency_3d(:,:,1) = tendency_3d(:,:,1)*tracer_in_mld(:,:)*rho0r
+      call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
       call diagnose_2d(Time, Grd, id_pme_river_times_tracer_in_mld(index_salt), tendency_in_mld(:,:))
   endif
   ! heat input from net pme relative to 0 degrees C (W/m2) binned to
@@ -5392,6 +5396,7 @@ subroutine ocean_sbc_diag(Time, Velocity, Thickness, Dens, T_prog, Ice_ocean_bou
 
   real, dimension(isd:ied,jsd:jed) :: tmp_flux
   real, dimension(isd:ied,jsd:jed) :: tendency_in_mld
+  real, dimension(isd:ied,jsd:jed,1:nk) :: tendency_3d
 
   integer :: i,j,k
   integer :: ii, jj
@@ -5759,9 +5764,9 @@ subroutine ocean_sbc_diag(Time, Velocity, Thickness, Dens, T_prog, Ice_ocean_bou
       endif
       if (id_net_sfc_heating_in_mld > 0) then
          tendency_in_mld(:,:) = 0.0
-         wrk1(:,:,:) = 0.0
-         wrk1(:,:,1) = wrk1_2d(:,:)
-         call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk1(:,:,:), tendency_in_mld(:,:))
+         tendency_3d(:,:,:) = 0.0
+         tendency_3d(:,:,1) = wrk1_2d(:,:)
+         call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
          call diagnose_2d(Time, Grd, id_net_sfc_heating_in_mld, tendency_in_mld(:,:))
       endif
   endif
@@ -5813,9 +5818,9 @@ subroutine ocean_sbc_diag(Time, Velocity, Thickness, Dens, T_prog, Ice_ocean_bou
   call diagnose_2d(Time, Grd, id_swflx, swflx(:,:))
   if (id_swflx_in_mld > 0) then
       tendency_in_mld(:,:) = 0.0
-      wrk1(:,:,:) = 0.0
-      wrk1(:,:,1) = swflx(:,:)
-      call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk1(:,:,:), tendency_in_mld(:,:))
+      tendency_3d(:,:,:) = 0.0
+      tendency_3d(:,:,1) = swflx(:,:)
+      call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
       call diagnose_2d(Time, Grd, id_swflx_in_mld, tendency_in_mld(:,:))
   endif
 
@@ -5855,9 +5860,9 @@ subroutine ocean_sbc_diag(Time, Velocity, Thickness, Dens, T_prog, Ice_ocean_bou
       endif
       if (id_evap_heat_in_mld > 0) then
           tendency_in_mld(:,:) = 0.0
-          wrk1(:,:,:) = 0.0
-          wrk1(:,:,1) = tmp_flux(:,:)
-          call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk1(:,:,:), tendency_in_mld(:,:))
+          tendency_3d(:,:,:) = 0.0
+          tendency_3d(:,:,1) = tmp_flux(:,:)
+          call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
           call diagnose_2d(Time, Grd, id_evap_heat_in_mld, tendency_in_mld(:,:))
       endif
   endif
@@ -5893,9 +5898,9 @@ subroutine ocean_sbc_diag(Time, Velocity, Thickness, Dens, T_prog, Ice_ocean_bou
   call diagnose_2d(Time, Grd, id_lw_heat, longwave(:,:))
   if (id_lw_heat_in_mld > 0) then
       tendency_in_mld(:,:) = 0.0
-      wrk1(:,:,:) = 0.0
-      wrk1(:,:,1) = longwave(:,:)
-      call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk1(:,:,:), tendency_in_mld(:,:))
+      tendency_3d(:,:,:) = 0.0
+      tendency_3d(:,:,1) = longwave(:,:)
+      call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
       call diagnose_2d(Time, Grd, id_lw_heat_in_mld, tendency_in_mld(:,:))
   endif
 
@@ -5951,9 +5956,9 @@ subroutine ocean_sbc_diag(Time, Velocity, Thickness, Dens, T_prog, Ice_ocean_bou
   call diagnose_2d(Time, Grd, id_sens_heat, sensible(:,:))
   if (id_sens_heat_in_mld > 0) then
       tendency_in_mld(:,:) = 0.0
-      wrk1(:,:,:) = 0.0
-      wrk1(:,:,1) = sensible(:,:)
-      call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk1(:,:,:), tendency_in_mld(:,:))
+      tendency_3d(:,:,:) = 0.0
+      tendency_3d(:,:,1) = sensible(:,:)
+      call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
       call diagnose_2d(Time, Grd, id_sens_heat_in_mld, tendency_in_mld(:,:))
   endif
 
@@ -6112,9 +6117,9 @@ subroutine ocean_sbc_diag(Time, Velocity, Thickness, Dens, T_prog, Ice_ocean_bou
   ! total mass flux per area from pme and river (kg/(m2*sec))
   if (id_pme_river_in_mld > 0) then
      tendency_in_mld(:,:) = 0.0
-     wrk1(:,:,:) = 0.0
-     wrk1(:,:,1) = pme(:,:) + river(:,:)
-     call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk1(:,:,:), tendency_in_mld(:,:))
+     tendency_3d(:,:,:) = 0.0
+     tendency_3d(:,:,1) = pme(:,:) + river(:,:)
+     call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
      call diagnose_2d(Time, Grd, id_pme_river_in_mld, tendency_in_mld(:,:))
   endif
 

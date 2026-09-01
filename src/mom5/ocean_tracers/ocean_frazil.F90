@@ -535,8 +535,9 @@ subroutine compute_frazil_heating (Time, Thickness, Dens, T_prog, T_diag)
   integer  :: taup1, tau
   real     :: tf_num, tf_den, tfreeze
   real     :: s, sqrts
-  real     :: press 
+  real     :: press
   real,dimension(isd:ied,jsd:jed) :: tendency_in_mld
+  real,dimension(isd:ied,jsd:jed,1:nk) :: tendency_3d
 
   if(.not. use_this_module) return
 
@@ -565,8 +566,8 @@ subroutine compute_frazil_heating (Time, Thickness, Dens, T_prog, T_diag)
     endif
     if (id_frazil_3d_in_mld > 0) then
       tendency_in_mld(:,:) = 0.0
-      wrk1(:,:,:) = T_diag(index_frazil)%field(:,:,:)*dtimer
-      call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk1(:,:,:), tendency_in_mld(:,:))
+      tendency_3d(:,:,:) = T_diag(index_frazil)%field(:,:,:)*dtimer
+      call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
       used = send_data(id_frazil_3d_in_mld, tendency_in_mld(:,:), &
            Time%model_time, rmask=Grd%tmask(:,:,1), &
            is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
@@ -740,8 +741,8 @@ subroutine compute_frazil_heating (Time, Thickness, Dens, T_prog, T_diag)
   endif
   if (id_frazil_3d_in_mld > 0) then
      tendency_in_mld(:,:) = 0.0
-     wrk1(:,:,:) = T_diag(index_frazil)%field(:,:,:)*dtimer
-     call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk1(:,:,:), tendency_in_mld(:,:))
+     tendency_3d(:,:,:) = T_diag(index_frazil)%field(:,:,:)*dtimer
+     call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
      call diagnose_2d(Time, Grd, id_frazil_3d_in_mld, tendency_in_mld(:,:))
   endif
   if (id_frazil_3d_int_z > 0 .or. id_total_ocean_frazil > 0) then

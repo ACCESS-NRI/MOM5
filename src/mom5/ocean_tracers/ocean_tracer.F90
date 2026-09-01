@@ -2313,9 +2313,10 @@ subroutine update_ocean_tracer (Time, Dens, Adv_vel, Thickness, pme, diff_cbt, &
   integer   :: taum1, tau, taup1
 
   real, dimension(isd:ied,jsd:jed) :: tendency_in_mld
+  real, dimension(isd:ied,jsd:jed,1:nk) :: tendency_3d
 
-  integer :: stdoutunit 
-  stdoutunit=stdout() 
+  integer :: stdoutunit
+  stdoutunit=stdout()
 
   taum1 = Time%taum1
   tau   = Time%tau
@@ -2444,9 +2445,9 @@ subroutine update_ocean_tracer (Time, Dens, Adv_vel, Thickness, pme, diff_cbt, &
         endif
         if (id_eta_smooth_in_mld(n)> 0) then
             tendency_in_mld(:,:) = 0.0
-            wrk1(:,:,:) = 0.0
-            wrk1(:,:,1) = T_prog(n)%eta_smooth(:,:)
-            call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk1(:,:,:), tendency_in_mld(:,:))
+            tendency_3d(:,:,:) = 0.0
+            tendency_3d(:,:,1) = T_prog(n)%eta_smooth(:,:)
+            call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
             call diagnose_2d(Time, Grd, id_eta_smooth_in_mld(n), tendency_in_mld(:,:)*T_prog(n)%conversion)
         endif
         if (id_eta_smooth_on_nrho(n)> 0) then
@@ -3906,9 +3907,10 @@ subroutine send_tracer_diagnostics(Time, T_prog, T_diag, Thickness, Dens, use_bl
   type(ocean_diag_tracer_type),   intent(in)    :: T_diag(:)
   type(ocean_thickness_type),     intent(in)    :: Thickness
   type(ocean_density_type),       intent(in)    :: Dens
-  logical,                        intent(in)    :: use_blobs 
+  logical,                        intent(in)    :: use_blobs
 
   real, dimension(isd:ied,jsd:jed) :: tendency_in_mld
+  real, dimension(isd:ied,jsd:jed,1:nk) :: tendency_3d
   integer :: i,j,k,kbot,n
   integer :: taum1,tau,taup1
   real    :: total_tracer
@@ -4015,7 +4017,8 @@ subroutine send_tracer_diagnostics(Time, T_prog, T_diag, Thickness, Dens, use_bl
          endif
          if (id_tendency_in_mld(n) > 0) then
             tendency_in_mld(:,:) = 0.0
-            call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk1(:,:,:), tendency_in_mld(:,:))
+            tendency_3d(:,:,:) = wrk1(:,:,:)
+            call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
             call diagnose_2d(Time, Grd, id_tendency_in_mld(n), tendency_in_mld(:,:))
          endif
          if (id_tendency_on_nrho(n) > 0) then
@@ -4033,13 +4036,15 @@ subroutine send_tracer_diagnostics(Time, T_prog, T_diag, Thickness, Dens, use_bl
             enddo
          enddo
          tendency_in_mld(:,:) = 0.0
-         call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk1(:,:,:), tendency_in_mld(:,:))
+         tendency_3d(:,:,:) = wrk1(:,:,:)
+         call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
          call diagnose_2d(Time, Grd, id_tracer_in_mld(n), tendency_in_mld(:,:))
       endif
 
       if (id_tracer_at_mlb(n) > 0) then
          tendency_in_mld(:,:) = 0.0
-         call compute_tracer_at_mlb(Time, Thickness, Dens, T_prog, T_prog(n)%field(:,:,:,tau), tendency_in_mld(:,:), wrk1_2d(:,:))
+         tendency_3d(:,:,:) = T_prog(n)%field(:,:,:,tau)
+         call compute_tracer_at_mlb(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:), wrk1_2d(:,:))
          call diagnose_2d(Time, Grd, id_tracer_at_mlb(n), tendency_in_mld(:,:))
       endif
 

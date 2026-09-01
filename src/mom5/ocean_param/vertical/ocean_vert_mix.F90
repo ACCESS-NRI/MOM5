@@ -5281,6 +5281,7 @@ subroutine vert_diffuse_implicit_diag(Time, Thickness, Dens, T_prog, diff_cbt, w
 
   real :: dTdz, diffusivity
   real,dimension(isd:ied,jsd:jed) :: tendency_in_mld
+  real,dimension(isd:ied,jsd:jed,1:nk) :: tendency_3d
   tau   = Time%tau
   taup1 = Time%taup1
  
@@ -5339,7 +5340,8 @@ subroutine vert_diffuse_implicit_diag(Time, Thickness, Dens, T_prog, diff_cbt, w
       endif
       if (id_vdiffuse_sbc_in_mld(n) > 0) then
          tendency_in_mld(:,:) = 0.0
-         call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk1(:,:,:), tendency_in_mld(:,:))
+         tendency_3d(:,:,:) = wrk1(:,:,:)
+         call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
          call diagnose_2d(Time, Grd, id_vdiffuse_sbc_in_mld(n), tendency_in_mld(:,:)*T_prog(n)%conversion)
       endif
       if (id_vdiffuse_sbc_on_nrho(n) > 0) then
@@ -5386,7 +5388,8 @@ subroutine vert_diffuse_implicit_diag(Time, Thickness, Dens, T_prog, diff_cbt, w
       endif
       if (id_vdiffuse_diff_cbt_in_mld(n) > 0) then
          tendency_in_mld(:,:) = 0.0
-         call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk1(:,:,:), tendency_in_mld(:,:))
+         tendency_3d(:,:,:) = wrk1(:,:,:)
+         call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
          call diagnose_2d(Time, Grd, id_vdiffuse_diff_cbt_in_mld(n), tendency_in_mld(:,:)*T_prog(n)%conversion)
       endif
       if (id_vdiffuse_diff_cbt_on_nrho(n) > 0) then
@@ -5417,7 +5420,8 @@ subroutine vert_diffuse_implicit_diag(Time, Thickness, Dens, T_prog, diff_cbt, w
       endif
       if (id_vdiffuse_diff_cbt_conv_in_mld(n) > 0) then
          tendency_in_mld(:,:) = 0.0
-         call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk1(:,:,:), tendency_in_mld(:,:))
+         tendency_3d(:,:,:) = wrk1(:,:,:)
+         call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
          call diagnose_2d(Time, Grd, id_vdiffuse_diff_cbt_conv_in_mld(n), tendency_in_mld(:,:)*T_prog(n)%conversion)
       endif
   endif
@@ -5445,7 +5449,8 @@ subroutine vert_diffuse_implicit_diag(Time, Thickness, Dens, T_prog, diff_cbt, w
       endif
       if (id_vdiffuse_k33_in_mld(n) > 0) then
          tendency_in_mld(:,:) = 0.0
-         call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk1(:,:,:), tendency_in_mld(:,:))
+         tendency_3d(:,:,:) = wrk1(:,:,:)
+         call compute_budget_mld(Time, Thickness, Dens, T_prog, tendency_3d(:,:,:), tendency_in_mld(:,:))
          call diagnose_2d(Time, Grd, id_vdiffuse_k33_in_mld(n), tendency_in_mld(:,:)*T_prog(n)%conversion)
       endif
       if (id_vdiffuse_k33_on_nrho(n) > 0) then
