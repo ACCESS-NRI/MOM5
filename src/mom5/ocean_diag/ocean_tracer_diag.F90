@@ -1095,15 +1095,15 @@ subroutine calc_mixed_layer_depth(Thickness, salinity, theta, rho, pressure, &
     smooth_mld_routine = smooth_mld
   endif
 
-  hmxl(:,:)       = 0.0
-  wrk1_mld(:,:,:) = 0.0
-  wrk2_mld(:,:,:) = 0.0
+  hmxl(:,:)   = 0.0
+  wrk1(:,:,:) = 0.0
+  wrk2(:,:,:) = 0.0
 
-  wrk1_mld(:,:,:) = density_delta_sfc( rho(:,:,:), salinity(:,:,:), theta(:,:,:), pressure(:,:,:))
+  wrk1(:,:,:) = density_delta_sfc( rho(:,:,:), salinity(:,:,:), theta(:,:,:), pressure(:,:,:))
   do k=2,nk
      do j=jsc,jec
         do i=isc,iec
-           wrk2_mld(i,j,k) = -grav*Grd%tmask(i,j,k)*wrk1_mld(i,j,k-1)/(epsln+rho(i,j,k))
+           wrk2(i,j,k) = -grav*Grd%tmask(i,j,k)*wrk1(i,j,k-1)/(epsln+rho(i,j,k))
         enddo
      enddo
   enddo
@@ -1120,18 +1120,18 @@ subroutine calc_mixed_layer_depth(Thickness, salinity, theta, rho, pressure, &
   enddo
 
   do k=2,nk
-     km1 = k-1
+     km1 = k-1  
      do j=jsc,jec
         do i=isc,iec
         kb=Grd%kmt(i,j)
            if (kb == 0) then
                hmxl(i,j) = 0.0
            else
-               if ( wrk2_mld(i,j,k) >= buoyancy_crit .and. hmxl(i,j)==Thickness%depth_zwt(i,j,kb)) then
-                   hmxl(i,j) = Thickness%depth_zt(i,j,km1)                                        &
-                             - (Thickness%depth_zt(i,j,km1) - Thickness%depth_zt(i,j,k))          &
-                             * (buoyancy_crit-wrk2_mld(i,j,km1))                                  &
-                             / (wrk2_mld(i,j,k) - wrk2_mld(i,j,km1) + epsln)
+               if ( wrk2(i,j,k) >= buoyancy_crit .and. hmxl(i,j)==Thickness%depth_zwt(i,j,kb)) then
+                   hmxl(i,j) = Thickness%depth_zt(i,j,km1)                                &
+                             - (Thickness%depth_zt(i,j,km1) - Thickness%depth_zt(i,j,k))  &
+                             * (buoyancy_crit-wrk2(i,j,km1))                              &
+                             / (wrk2(i,j,k) - wrk2(i,j,km1) + epsln)
                endif
                hmxl(i,j) = hmxl(i,j) * Grd%tmask(i,j,1)
            endif
