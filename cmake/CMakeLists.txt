@@ -37,6 +37,10 @@ message(STATUS "Build type = ${MOM5_TYPE}")
 option(MOM5_USE_NETCDF3    "Use netCDF3 rather than netCDF4. Only relevant for MOM5_TYPEs that use internal FMS"  OFF)
 option(MOM5_DETERMINISTIC  "Deterministic build"  OFF)
 
+if(MOM5_DETERMINISTIC AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+  message(FATAL_ERROR "MOM5_DETERMINISTIC is only supported with CMAKE_BUILD_TYPE=Release (got '${CMAKE_BUILD_TYPE}').")
+endif()
+
 message(STATUS "Build options")
 message(STATUS "  - MOM5_USE_NETCDF3    ${MOM5_USE_NETCDF3}")
 message(STATUS "  - MOM5_DETERMINISTIC  ${MOM5_DETERMINISTIC}" )
