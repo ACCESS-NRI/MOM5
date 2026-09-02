@@ -96,6 +96,7 @@ use ocean_types_mod,       only: ocean_prog_tracer_type, ocean_density_type, oce
 use ocean_util_mod,        only: write_timestamp, diagnose_2d, diagnose_3d, diagnose_sum
 use ocean_util_mod,        only: write_chksum_2d, write_chksum_3d, write_chksum_2d_int
 use ocean_tracer_util_mod, only: diagnose_3d_rho
+use ocean_tracer_diag_mod, only: compute_budget_mld
 use ocean_workspace_mod,   only: wrk1, wrk2, wrk3, wrk4, wrk5, wrk1_v
 
 implicit none
@@ -187,8 +188,9 @@ integer :: id_wdian_salt_mixdown_on_nrho =-1
 integer :: id_tform_salt_mixdown_on_nrho =-1
 
 
-integer, dimension(:), allocatable :: id_mixdownslope 
-integer, dimension(:), allocatable :: id_mixdownslope_on_nrho 
+integer, dimension(:), allocatable :: id_mixdownslope
+integer, dimension(:), allocatable :: id_mixdownslope_on_nrho
+integer, dimension(:), allocatable :: id_mixdownslope_in_mld  ! mixdownslope tendency averaged in mixed layer
 
 
 character(len=128) :: version=&
@@ -536,8 +538,10 @@ ierr = check_nml_error(io_status,'ocean_mixdownslope_nml')
 
   allocate (id_mixdownslope(num_prog_tracers))
   allocate (id_mixdownslope_on_nrho(num_prog_tracers))
+  allocate (id_mixdownslope_in_mld(num_prog_tracers))
   id_mixdownslope_on_nrho = -1
   id_mixdownslope = -1
+  id_mixdownslope_in_mld = -1
 
   do n=1,num_prog_tracers
      if(T_prog(n)%name == 'temp') then 
@@ -551,6 +555,11 @@ ierr = check_nml_error(io_status,'ocean_mixdownslope_nml')
               Dens%neutralrho_axes(1:3), Time%model_time,              &
               'cp*mixdownslope*rho*dzt*temp binned to neutral density',  &
               'Watt/m^2', missing_value=missing_value, range=(/-1.e20,1.e20/))
+         id_mixdownslope_in_mld(n) = register_diag_field ('ocean_model', &
+              'mixdownslope_'//trim(T_prog(n)%name)//'_in_mld',          &
+              Grd%tracer_axes(1:2), Time%model_time,                     &
+              'cp*mixdownslope*rho*dzt*temp averaged in mixed layer',    &
+              'Watt/m^3', missing_value=missing_value, range=(/-1.e9,1.e9/))
      else
          id_mixdownslope(n) = register_diag_field ('ocean_model', 'mixdownslope_'//trim(T_prog(n)%name), &
               Grd%tracer_axes(1:3), Time%model_time,                                                     &
@@ -561,6 +570,11 @@ ierr = check_nml_error(io_status,'ocean_mixdownslope_nml')
               Dens%neutralrho_axes(1:3), Time%model_time,                                               &
               'mixdownslope*rho*dzt*tracer for '//trim(T_prog(n)%name)//' binned to neutral density',  &
               trim(T_prog(n)%flux_units), missing_value=missing_value, range=(/-1.e20,1.e20/))
+         id_mixdownslope_in_mld(n) = register_diag_field ('ocean_model', &
+              'mixdownslope_'//trim(T_prog(n)%name)//'_in_mld',          &
+              Grd%tracer_axes(1:2), Time%model_time,                                                   &
+              'mixdownslope*rho*dzt*tracer averaged in MLD for '//trim(T_prog(n)%name),                &
+              trim(T_prog(n)%flux_units)//'/m', missing_value=missing_value, range=(/-1.e9,1.e9/))
      endif
   enddo
 
@@ -650,6 +664,7 @@ subroutine mixdownslope (Time, Thickness, T_prog, Dens, index_temp, index_salt)
   real    :: mass_sum, tmix
   real    :: mixdownslope_total, mixdownslope_total_r
   real    :: tendency
+  real, dimension(isd:ied,jsd:jed) :: tendency_in_mld
 
   integer :: stdoutunit 
   stdoutunit=stdout() 
@@ -907,10 +922,10 @@ subroutine mixdownslope (Time, Thickness, T_prog, Dens, index_temp, index_salt)
         enddo
      enddo
 
-     if(id_mixdownslope(nt) > 0 .or. id_mixdownslope_on_nrho(nt) > 0) then
+     if(id_mixdownslope(nt) > 0 .or. id_mixdownslope_on_nrho(nt) > 0 .or. id_mixdownslope_in_mld(nt) > 0) then
          wrk1(:,:,:) = 0.0
          do k=1,nk
-            do j=jsc,jec   
+            do j=jsc,jec
                do i=isc,iec
                   wrk1(i,j,k) = tend_mix(i,j,k)*mixdownslope_mask(i,j)*T_prog(nt)%conversion
                enddo
@@ -921,6 +936,10 @@ subroutine mixdownslope (Time, Thickness, T_prog, Dens, index_temp, index_salt)
          endif
          if (id_mixdownslope_on_nrho(nt) > 0) then
             call diagnose_3d_rho(Time, Dens, id_mixdownslope_on_nrho(nt), wrk1)
+         endif
+         if (id_mixdownslope_in_mld(nt) > 0) then
+            call compute_budget_mld(Time, Thickness, Dens, T_prog, wrk1(:,:,:), tendency_in_mld(:,:))
+            call diagnose_2d(Time, Grd, id_mixdownslope_in_mld(nt), tendency_in_mld(:,:))
          endif
      endif
 
