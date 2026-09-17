@@ -1,0 +1,38 @@
+packages:
+  cice5:
+    require:
+    - '@2026.01.000'
+  um7:
+    require:
+    - '@2026.02.000'
+  cable:
+    require:
+    - '@2025.11.000'
+    - library=access-esm1.6
+  gcom4:
+    require:
+    - '@2025.08.000'
+  libaccessom2:
+    require:
+    - '@2026.02.000'
+  access-fms:
+    require:
+    - '@2025.08.000'
+  access-generic-tracers:
+    require:
+    - '@2026.02.000'
+  access-mocsy:
+    require:
+    - '@2025.07.002'
+  netcdf-c:
+    require:
+    - '@4.9.2'
+  netcdf-fortran:
+    require:
+    - '@4.6.1'
+  parallelio:
+    require:
+    - '@2.6.8'
+  openmpi:
+    require:
+    - '@5.0.8'

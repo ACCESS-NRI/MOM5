@@ -1,6 +1,9 @@
 spack:
+  include:
+  # Include configuration from this repository, with the environment variable defined in build-ci
+  - path: $SPACK_MANIFEST_REPOSITORY_PATH/.github/build-ci/config
   specs:
-  - 'access-esm1p6@latest cice=5'
+  - 'access-esm1p6@latest cice=5 %%access_intel'
   packages:
     mom5:
       require:
@@ -8,46 +11,8 @@ spack:
       - 'model=access-esm1.6'
     cice5:
       require:
-      - '@{{ cice5_version }}'
       - 'nxglob=360 nyglob=300 blckx=30 blcky=300 mxblcks=1' # grid size and block size
-    um7:
-      require:
-      - '@{{ um7_version }}'
-    cable:
-      require:
-      - '@{{ cable_version }}'
-      - library=access-esm1.6
-    gcom4:
-      require:
-      - '@{{ gcom4_version }}'
     oasis3-mct:
       require:
-      - '@{{ oasis3_mct_version_esm1p6 }}'
-    access-fms:
-      require:
-      - '@{{ access_fms_version }}'
-    access-generic-tracers:
-      require:
-      - '@{{ access_generic_tracers_version }}'
-    access-mocsy:
-      require:
-      - '@{{ access_mocsy_version }}'
-    netcdf-c:
-      require:
-      - '@{{ netcdf_c_version}}'
-    netcdf-fortran:
-      require:
-      - '@{{ netcdf_fortran_version }}'
-    openmpi:
-      require:
-      - '@{{ openmpi_version }}'
-    intel-oneapi-compilers-classic:
-      require:
-      - '@{{ intel_compiler_version }}'
-    all:
-      require:
-      - '%access_intel'
-      - 'target=x86_64'
-  concretizer:
-    unify: false
+      - '@5.2'
   view: false
