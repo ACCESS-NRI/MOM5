@@ -9,3 +9,9 @@ spack:
       require:
       - '@git.{{ ref }}=access-esm1.5'
   view: false
+  repos:
+    #  The @access-esm1.5 version for manifests is only available < 2026.08.000, so we are pinned here
+    access_spack_packages:
+      git: https://github.com/ACCESS-NRI/access-spack-packages.git
+      tag: 2026.07.013
+      destination: $env/package-repos/access-spack-packages
