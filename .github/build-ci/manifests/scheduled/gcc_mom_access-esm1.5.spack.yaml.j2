@@ -1,26 +1,13 @@
 spack:
+  include:
+  # Include configuration from this repository, with the environment variable defined in build-ci
+  - path: $SPACK_MANIFEST_REPOSITORY_PATH/.github/build-ci/config
   specs:
-  - mom5@git.{{ ref }}=access-esm1.5
-  packages:
-    oasis3-mct:
-      require:
-      - '@{{ oasis3_mct_version }}'
-    netcdf-c:
-      require:
-      - '@{{ netcdf_c_version }}'
-    netcdf-fortran:
-      require:
-      - '@{{ netcdf_fortran_version }}'
-    openmpi:
-      require:
-      - '@{{ openmpi_version }}'
-    gcc:
-      require:
-      - '@{{ gcc_compiler_version }}'
-    all:
-      require:
-      - '%access_gcc'
-      - 'target=x86_64'
-  concretizer:
-    unify: false
+  - mom5@git.{{ ref }}=access-esm1.5 %%access_gcc
   view: false
+  repos:
+    #  The @access-esm1.5 version for manifests is only available < 2026.08.000, so we are pinned here
+    access_spack_packages:
+      git: https://github.com/ACCESS-NRI/access-spack-packages.git
+      tag: 2026.07.013
+      destination: $env/package-repos/access-spack-packages
