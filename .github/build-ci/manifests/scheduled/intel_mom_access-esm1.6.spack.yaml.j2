@@ -1,35 +1,11 @@
 spack:
+  include:
+  # Include configuration from this repository, with the environment variable defined in build-ci
+  - path: $SPACK_MANIFEST_REPOSITORY_PATH/.github/build-ci/config
   specs:
-  - 'mom5@git.{{ ref }}=stable model=access-esm1.6'
+  - 'mom5@git.{{ ref }}=stable model=access-esm1.6 %%access_intel'
   packages:
     oasis3-mct:
       require:
-      - '@{{ oasis3_mct_version_esm1p6 }}'
-    access-fms:
-      require:
-      - '@{{ access_fms_version }}'
-    access-generic-tracers:
-      require:
-      - '@{{ access_generic_tracers_version }}'
-    access-mocsy:
-      require:
-      - '@{{ access_mocsy_version }}'
-    netcdf-c:
-      require:
-      - '@{{ netcdf_c_version}}'
-    netcdf-fortran:
-      require:
-      - '@{{ netcdf_fortran_version }}'
-    openmpi:
-      require:
-      - '@{{ openmpi_version }}'
-    intel-oneapi-compilers-classic:
-      require:
-      - '@{{ intel_compiler_version }}'
-    all:
-      require:
-      - '%access_intel'
-      - 'target=x86_64'
-  concretizer:
-    unify: false
+      - '@5.2'
   view: false
