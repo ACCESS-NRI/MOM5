@@ -3,7 +3,7 @@ spack:
   # Include configuration from this repository, with the environment variable defined in build-ci
   - path: $SPACK_MANIFEST_REPOSITORY_PATH/.github/build-ci/config
   specs:
-  - 'access-om2@latest %%access_intel'
+  - 'access-om2@latest'
   packages:
     mom5:
       require:
@@ -15,4 +15,7 @@ spack:
     oasis3-mct:
       require:
       - '@2025.03.001'
+    all:
+      require:
+      - '%access_intel'
   view: false

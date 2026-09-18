@@ -3,9 +3,12 @@ spack:
   # Include configuration from this repository, with the environment variable defined in build-ci
   - path: $SPACK_MANIFEST_REPOSITORY_PATH/.github/build-ci/config
   specs:
-  - 'mom5@git.{{ ref }}=stable model=access-esm1.6 %%access_intel'
+  - 'mom5@git.{{ ref }}=stable model=access-esm1.6'
   packages:
     oasis3-mct:
       require:
       - '@5.2'
+    all:
+      require:
+      - '%access_intel'
   view: false
