@@ -3,11 +3,14 @@ spack:
   # Include configuration from this repository, with the environment variable defined in build-ci
   - path: $SPACK_MANIFEST_REPOSITORY_PATH/.github/build-ci/config
   specs:
-  - 'access-esm1p5@latest %%access_intel'
+  - 'access-esm1p5@latest'
   packages:
     mom5:
       require:
       - '@git.{{ ref }}=access-esm1.5'
+    all:
+      require:
+      - '%access_intel'
   view: false
   repos:
     #  The @access-esm1.5 version for manifests is only available < 2026.08.000, so we are pinned here
