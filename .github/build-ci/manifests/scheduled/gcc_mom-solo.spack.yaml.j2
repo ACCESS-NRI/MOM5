@@ -1,23 +1,11 @@
 spack:
+  include:
+  # Include configuration from this repository, with the environment variable defined in build-ci
+  - path: $SPACK_MANIFEST_REPOSITORY_PATH/.github/build-ci/config
   specs:
   - 'mom5@git.{{ ref }}=stable model=mom_solo'
   packages:
-    netcdf-c:
-      require:
-      - '@{{ netcdf_c_version}}'
-    netcdf-fortran:
-      require:
-      - '@{{ netcdf_fortran_version }}'
-    openmpi:
-      require:
-      - '@{{ openmpi_version }}'
-    gcc:
-      require:
-      - '@{{ gcc_compiler_version }}'
     all:
       require:
       - '%access_gcc'
-      - 'target=x86_64'
-  concretizer:
-    unify: false
   view: false
